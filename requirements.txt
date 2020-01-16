@@ -1,0 +1,6 @@
+torch
+argparse
+env-file
+Pillow
+torchvision
+mock
