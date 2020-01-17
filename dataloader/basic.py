@@ -7,12 +7,18 @@ Load random augmented data from a root folder
 
 import argparse
 import os
-
+import sys
+import pandas as pd
+import numpy as np
+from utils.albumentation import Albumentation
+from dataloader.basicinput import handleinput
 # import torch
 import torchvision
+from torch.utils.data import Dataset, DataLoader
 
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+
+sys.path.insert(0, 'utils/')
 
 
 class BasicDataLoader(Dataset):
@@ -29,7 +35,7 @@ class BasicDataLoader(Dataset):
         color_mode: Images color mode
     """
 
-    def __init__(self, root_dir, image_filenames, images_size=0, color_mode='RGB'):
+    def __init__(self, root_dir, filenames_root,  gt_filenames_root, images_size=0):
         """Test Dataset main class
 
         Args:
@@ -39,14 +45,15 @@ class BasicDataLoader(Dataset):
         """
         # Image info
         self.images_size = images_size
-        self.color_mode = color_mode
         # Dir info
         self.root_dir = root_dir
-        self.image_filenames = image_filenames
-        self.gt_filenames = []
+        if os.path.isfile(filenames_root):
+            self.image_names = [l.strip().replace('\n', '')
+                                for l in open(filenames_root).readlines()]
+
+        self.gt_filenames_root = pd.read_csv(gt_filenames_root)
 
     # Method __len__ must be override in Pytorch
-
     def __len__(self):
         return len(self.files_list)
 
@@ -64,80 +71,43 @@ class BasicDataLoader(Dataset):
                     print('Expected type "int" argument')
                     return None
 
-        # Open and show Image
-        img = Image.open(os.path.join(
-            self.root_dir, self.image_filenames[idx]))
+        # Create Output object
+        output = {
+            'image': np.array(Image.open(os.path.join(
+                self.root_dir, self.image_names[idx]))),
+            'keypoints': self.gt_filenames_root.iloc[idx, 1:].as_matrix().reshape(-1, 2)
+        }
 
-        # Transforms
-        # TODO make transforms optional
-        transforms = []
+        aug = Albumentation('kp', [200, 200]).fast_aug()
+        # Transform Output with albumentation
+        output = aug(**output)
 
-        # Resize or not
-        if self.images_size != 0:
-            transforms.append(torchvision.transforms.Resize(self.images_size))
-            transforms.append(
-                torchvision.transforms.RandomCrop(self.images_size))
+        # Normalize and generate tensor from output['image']
+        output['image'] = torchvision.transforms.ToTensor()(output['image'])
+        output['image'] = torchvision.transforms.Normalize(
+            (0.5, 0.5, 0.5), (0.5, 0.5, 0.5))(output['image'])
 
-        # More transforms for data augmentation
-        transforms.append(torchvision.transforms.RandomHorizontalFlip(p=0.5))
-        transforms.append(torchvision.transforms.RandomPerspective(
-            distortion_scale=0.5, p=0.2, interpolation=3))
-
-        # Transform image to torch tensor
-        transforms.append(torchvision.transforms.ToTensor())
-
-        # Normalize image
-        if self.color_mode == 'RGB':
-            transforms.append(torchvision.transforms.Normalize(
-                (0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
-        elif self.color_mode == 'L':
-            transforms.append(torchvision.transforms.Normalize((0.5,), (0.5,)))
-
-        return {
-            'image': torchvision.transforms.Compose(transforms)(img),
-            'label': self.gt_filenames[idx]}
-
-
-def handle_user_input(args):
-    """Add logic to user input
-
-    Args:
-        args: Parsed arguments from user input
-    """
-
-    # Check all params are correct
-    # src param
-    if not os.path.exists(args.src):  # If does not exist
-        raise ValueError
-
-    # Resize param
-    if args.resize:
-        data_set = BasicDataLoader(args.src, args.filenames, args.resize)
-    # No resizing
-    else:
-        data_set = BasicDataLoader(args.src, args.filenames)
-
-    return data_set.__getitem__(
-        args.getimage) if args.getimage else DataLoader(
-            data_set, batch_size=args.batchsize)
+        return output
 
 
 if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(
         description='Training over datsets creation')
-    PARSER.add_argument('src', type=str, help='path to get images')
+    PARSER.add_argument('src', type=str, help='path to get the images')
     PARSER.add_argument('filenames', type=str,
                         help='path to get images filenames')
+    PARSER.add_argument('gt_filenames', type=str,
+                        help='path to get images ground truth filenames')
     PARSER.add_argument('--getimage', '-gi', type=int,
                         help='Get only one image')
     PARSER.add_argument('--batchsize', '-b', help='Batch size', type=int,
                         default=1)
     PARSER.add_argument('--resize', '-r',
-                        help='Resize images',
+                        help='Resize images H x W, Ex: 500 200; 760 230 ....',
                         type=int, nargs='+')
 
     ARGS = PARSER.parse_args()
 
-    OUTPUT = handle_user_input(ARGS)
+    OUTPUT = handleinput(ARGS, BasicDataLoader)
 
     print(OUTPUT)

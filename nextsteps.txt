@@ -1,2 +1,4 @@
+Implement albumentations (Done)
+test facedetector dataset (Done)
 Integrate COCO dataset python API
 INtegrate COCO dataset

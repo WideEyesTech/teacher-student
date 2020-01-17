@@ -4,3 +4,8 @@ env-file
 Pillow
 torchvision
 mock
+albumentations
+pandas
+numpy
+opencv-python
+matplotlib
