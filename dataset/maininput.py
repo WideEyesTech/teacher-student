@@ -22,27 +22,11 @@ def handleinput(args, dataloader):
     # Resize param
     if args.resize:
         data_set = dataloader(
-            args.src, args.filenames, args.gt_filenames, args.labels_type, args.resize)
+            args.src, args.filenames, args.labelnames, args.labels_type, args.env, args.resize)
     # No resizing
     else:
         data_set = dataloader(
-            args.src, args.filenames, args.gt_filenames, args.labels_type,)
-
-    for s in data_set:
-        def vis_points(image, points, diameter=15):
-            image = np.array(torchvision.transforms.ToPILImage()
-                             (image).convert('RGB'))
-            im = image.copy()
-
-            for (x, y) in points:
-                cv2.circle(im, (int(x), int(y)), 1, (0, 255, 0), -1)
-
-            plt.imshow(im)
-            plt.show()
-
-        vis_points(s['image'], s['keypoints'])
-
-        break
+            args.src, args.filenames, args.labelnames, args.labels_type, args.env)
 
     return data_set.__getitem__(
         args.getimage) if args.getimage else DataLoader(

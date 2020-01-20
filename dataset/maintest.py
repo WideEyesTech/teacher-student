@@ -1,11 +1,11 @@
-"""Unit testing of BasicDataLoader
+"""Unit testing of MainDataset
 """
 from unittest import TestCase, main, mock
 # Paths to add
 import sys
 sys.path.insert(0, './')
 
-from dataloader.basic import BasicDataLoader
+from dataset.main import MainDataset
 
 class BasicDataLaoderTests(TestCase):
     """Main testing class for BasicDataLaoder
@@ -17,7 +17,7 @@ class BasicDataLaoderTests(TestCase):
         with mock.patch('os.listdir') as mocked_listdir:
             mocked_listdir.return_value = [
                 'fake_img1.jpg', 'fake_img2.wrong extension', 'fake_img3.jpg']
-            data_loader = BasicDataLoader('/fake/path')
+            data_loader = MainDataset('/fake/path', '/fake/path', '/fake/path', '/fake/path', 'train')
             # Expect length to be 2
             # wrong extension file should be omitted
             self.assertEqual(data_loader.__len__(), 2)

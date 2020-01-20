@@ -1,3 +1,6 @@
-Implement albumentations (Done)
-test facedetector dataset (Done)
-Download COCO dataset
+create/fix simple network
+test both train and evaluate files
+clean code
+
+models
+    centernet
