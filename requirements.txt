@@ -9,3 +9,5 @@ pandas
 numpy
 opencv-python
 matplotlib
+Cython
+pycocotools

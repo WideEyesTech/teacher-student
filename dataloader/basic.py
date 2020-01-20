@@ -14,7 +14,7 @@ from utils.albumentation import Albumentation
 from dataloader.basicinput import handleinput
 # import torch
 import torchvision
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 from PIL import Image
 
@@ -35,7 +35,7 @@ class BasicDataLoader(Dataset):
         color_mode: Images color mode
     """
 
-    def __init__(self, root_dir, filenames_root,  gt_filenames_root, images_size=0):
+    def __init__(self, root_dir, filenames_root, gt_filenames_root, labels_type, images_size=0):
         """Test Dataset main class
 
         Args:
@@ -45,6 +45,7 @@ class BasicDataLoader(Dataset):
         """
         # Image info
         self.images_size = images_size
+        self.labels_type = labels_type
         # Dir info
         self.root_dir = root_dir
         if os.path.isfile(filenames_root):
@@ -78,9 +79,13 @@ class BasicDataLoader(Dataset):
             'keypoints': self.gt_filenames_root.iloc[idx, 1:].as_matrix().reshape(-1, 2)
         }
 
-        aug = Albumentation('kp', [200, 200]).fast_aug()
         # Transform Output with albumentation
-        output = aug(**output)
+        aug = Albumentation('kp', [200, 200]).fast_aug()
+
+        if self.labels_type != 'labels':
+            output['image'] = aug(output['image'])
+        else:
+            output = aug(**output)
 
         # Normalize and generate tensor from output['image']
         output['image'] = torchvision.transforms.ToTensor()(output['image'])
@@ -102,6 +107,8 @@ if __name__ == '__main__':
                         help='Get only one image')
     PARSER.add_argument('--batchsize', '-b', help='Batch size', type=int,
                         default=1)
+    PARSER.add_argument('--labeltype', '-lt', help='Label type',
+                        choices=['labels', 'keypoints', 'bboxes'], default='labels')
     PARSER.add_argument('--resize', '-r',
                         help='Resize images H x W, Ex: 500 200; 760 230 ....',
                         type=int, nargs='+')

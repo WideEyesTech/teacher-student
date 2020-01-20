@@ -1,7 +1,7 @@
 """
 """
 import torchvision
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 import cv2
 import os
 import numpy as np
@@ -22,11 +22,11 @@ def handleinput(args, dataloader):
     # Resize param
     if args.resize:
         data_set = dataloader(
-            args.src, args.filenames, args.gt_filenames, args.resize)
+            args.src, args.filenames, args.gt_filenames, args.labels_type, args.resize)
     # No resizing
     else:
         data_set = dataloader(
-            args.src, args.filenames, args.gt_filenames,)
+            args.src, args.filenames, args.gt_filenames, args.labels_type,)
 
     for s in data_set:
         def vis_points(image, points, diameter=15):

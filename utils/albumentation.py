@@ -6,7 +6,7 @@ from albumentations import (
     IAAAdditiveGaussianNoise, IAASharpen, IAAEmboss
 )
 
-from albumentations.core.composition import KeypointParams
+from albumentations.core.composition import KeypointParams, BboxParams
 
 class Albumentation():
     """Albumentation module for image augmentation
@@ -50,8 +50,8 @@ class Albumentation():
         if self.label_type == 'kp':
             return Compose(self.transforms, p=p, keypoint_params=KeypointParams(format='xy'))
 
-        if self.label_type == 'bb':
-            return Compose(self.transforms, p=p, bbox_params=self.params)
+        #if self.label_type == 'bb':
+            #TODO return Compose(self.transforms, p=p, bbox_params=BboxParams(formar='coco'))
 
         # TODO should add defaul return
         return 0
@@ -71,8 +71,8 @@ class Albumentation():
         if self.label_type == 'kp':
             return Compose(fast_transform, p=p, keypoint_params=KeypointParams(format='xy'))
 
-        if self.label_type == 'bb':
-            return Compose(fast_transform, p=p, bbox_params=self.params)
+        #if self.label_type == 'bb':
+            # TODO return Compose(fast_transform, p=p, bbox_params=BboxParams(formar='coco'))
 
         # TODO should add default return
         return 0
