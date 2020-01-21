@@ -12,4 +12,3 @@ matplotlib
 Cython
 pycocotools
 tqdm
-logging

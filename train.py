@@ -50,7 +50,8 @@ class Train():
         loss_avg = RunningAverage()
 
         # Use tqdm for progress bar
-        with tqdm(total=len(self.dataloader)) as t:
+        import pdb; pdb.set_trace()
+        with tqdm(total=self.dataloader.__len__()) as t:
             for i, (train_batch, labels_batch) in enumerate(self.dataloader):
                 # move to GPU if available
                 if self.params.cuda:
@@ -134,7 +135,7 @@ class TrainAndEval():
 
             # compute number of batches in one epoch (one full pass over the training set)
             Train(self.model, self.optimizer, self.loss_fn,
-                  self.train_dataloader, self.metrics, self.params)
+                  self.train_dataloader, self.metrics, self.params)()
 
             # Evaluate for one epoch on validation set
             val_metrics = Evaluate(
@@ -158,12 +159,12 @@ class TrainAndEval():
             # Save best val metrics in a json file in the model directory
                 best_json_path = os.path.join(
                     self.model_dir, "metrics_val_best_weights.json")
-                DictToJson(val_metrics, best_json_path)
+                DictToJson()(val_metrics, best_json_path)
 
             # Save latest val metrics in a json file in the model directory
             last_json_path = os.path.join(
                 self.model_dir, "metrics_val_last_weights.json")
-            DictToJson(val_metrics, last_json_path)
+            DictToJson()(val_metrics, last_json_path)
 
 
 def handleinput(args):
@@ -200,9 +201,9 @@ def handleinput(args):
 
     # fetch dataloaders
     train_dl = DataLoader(data_loader(
-        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type']), batch_size=params.batch_size)
+        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'train', 224), batch_size=params.batch_size)
     val_dl = DataLoader(data_loader(
-        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'val'), batch_size=params.batch_size)
+        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'val', 224), batch_size=params.batch_size)
 
     logging.info("- done.")
 
