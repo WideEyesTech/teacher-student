@@ -48,12 +48,10 @@ class Train():
         # summary for current training loop and a running average object for loss
         summ = []
         loss_avg = RunningAverage()
-
+        
         # Use tqdm for progress bar
-        import pdb; pdb.set_trace()
         with tqdm(total=self.dataloader.__len__()) as t:
-            for i, (train_batch, labels_batch) in enumerate(self.dataloader):
-                # move to GPU if available
+            for i, (train_batch, labels_batch) in enumerate(self.dataloader):  # move to GPU if available
                 if self.params.cuda:
                     train_batch, labels_batch = train_batch.cuda(
                         non_blocking=True), labels_batch.cuda(non_blocking=True)
@@ -104,15 +102,6 @@ class TrainAndEval():
 
     def __init__(self, model, train_dataloader, val_dataloader, optimizer, loss_fn, metrics, params, model_dir):
         """Train the model and evaluate every epoch.
-        Args:
-            model: (torch.nn.Module) the neural network
-            train_dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches training data
-            val_dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches validation data
-            optimizer: (torch.optim) optimizer for parameters of model
-            loss_fn: a function that takes batch_output and batch_labels and computes the loss for the batch
-            metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
-            params: (Params) hyperparameters
-            model_dir: (string) directory containing config, weights and log
         """
         self.model = model
         self.params = params
@@ -201,15 +190,15 @@ def handleinput(args):
 
     # fetch dataloaders
     train_dl = DataLoader(data_loader(
-        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'train', 224), batch_size=params.batch_size)
+        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'train', dataset_info['images']['size']), batch_size=params.batch_size)
     val_dl = DataLoader(data_loader(
-        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'val', 224), batch_size=params.batch_size)
+        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'val', dataset_info['images']['size']), batch_size=params.batch_size)
 
     logging.info("- done.")
 
     # Define the model and optimizer
     model = net.Net(params).cuda() if params.cuda else net.Net(params)
-    optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
+    optimizer = optim.SGD(model.parameters(), lr=params.learning_rate)
 
     # fetch loss function and metrics
     loss_fn = net.loss_fn

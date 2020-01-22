@@ -15,35 +15,25 @@ class Net(nn.Module):
         """
         super(Net, self).__init__()
         
-        self.conv1 = nn.Conv2d(3, 32, 5)
+        self.conv1 = nn.Conv2d(1, 32, 5)
 
-        # output size = (W-F)/S +1 = (224-5)/1 + 1 = 220
         self.pool1 = nn.MaxPool2d(2, 2)
-        # 220/2 = 110  the output Tensor for one image, will have the dimensions: (32, 110, 110)
 
         self.conv2 = nn.Conv2d(32,64,3)
-        # output size = (W-F)/S +1 = (110-3)/1 + 1 = 108
         self.pool2 = nn.MaxPool2d(2, 2)
-        #108/2=54   the output Tensor for one image, will have the dimensions: (64, 54, 54)
 
         self.conv3 = nn.Conv2d(64,128,3)
-        # output size = (W-F)/S +1 = (54-3)/1 + 1 = 52
         self.pool3 = nn.MaxPool2d(2, 2)
-        #52/2=26    the output Tensor for one image, will have the dimensions: (128, 26, 26)
 
         self.conv4 = nn.Conv2d(128,256,3)
-        # output size = (W-F)/S +1 = (26-3)/1 + 1 = 24
         self.pool4 = nn.MaxPool2d(2, 2)
-        #24/2=12   the output Tensor for one image, will have the dimensions: (256, 12, 12)
 
         self.conv5 = nn.Conv2d(256,512,1)
-        # output size = (W-F)/S +1 = (12-1)/1 + 1 = 12
         self.pool5 = nn.MaxPool2d(2, 2)
-        #12/2=6    the output Tensor for one image, will have the dimensions: (512, 6, 6)
 
         #Linear Layer
-        self.fc1 = nn.Linear(512*6*6, 1024)
-        self.fc2 = nn.Linear(1024, 136)
+        self.fc1 = nn.Linear(2048, 200)
+        self.fc2 = nn.Linear(200, 30)
 
         # Dropouts
         self.drop1 = nn.Dropout(p = 0.1)
@@ -73,13 +63,13 @@ class Net(nn.Module):
         return x
 
 def loss_fn(outputs, labels):
-    return nn.SmoothL1Loss()(outputs, labels)
+    return nn.SmoothL1Loss(reduction='mean')(outputs, labels)
 
 
 def accuracy(outputs, labels):
     """
     """
-    return np.sum(labels - outputs)/float(labels.size)
+    return 1/float(labels.size) * (np.sum(labels - outputs)/float(labels.size))
 
 
 # maintain all metrics required in this dictionary- these are used in the training and evaluation loops

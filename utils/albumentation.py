@@ -61,11 +61,6 @@ class Albumentation():
         """
         fast_transform = [
             HorizontalFlip(),
-            OneOf([
-                MotionBlur(p=0.2),
-                MedianBlur(blur_limit=3, p=0.1),
-                Blur(blur_limit=3, p=0.1),
-            ], p=0.2),
             Resize(*self.resize),
         ]
         if self.label_type == 'kp':

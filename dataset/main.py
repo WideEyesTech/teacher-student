@@ -10,6 +10,7 @@ import os
 import sys
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from utils.albumentation import Albumentation
 from dataset.maininput import handleinput
 
@@ -25,38 +26,46 @@ sys.path.insert(0, 'utils/')
 class MainDataset(Dataset):
     """Test MainDataset main class
 
-    Args:
-        MainDataset: Pytorch MainDataset module
-
-    Attributes:
-        root_dir (str): Root to dir where images are saved.
-        images_size: Size to resize images, 0 means no resizing
     """
 
     def __init__(self, root_dir, filenames_root, labels_root, labels_type='labels', env='train', images_size=0):
         """Test MainDataset main class
-
-        Args:
-            root_dir: Root to dir where images are saved.
-            images_size: Size to resize images, 0 means no resizing.
-            env: Whether if env is train test or validation
         """
+
         # Image info
         self.images_size = images_size
         self.labels_type = labels_type
-        # Dir info
-        self.root_dir = root_dir
-        if os.path.isfile(filenames_root):
-            self.image_names = [l.strip().replace('\n', '')
-                                for l in open(filenames_root).readlines()]
+
+        # Load images
+        self.images = np.load(root_dir)
 
         self.labels_root = pd.read_csv(labels_root)
+        # Remove rows with missing values
+        self.labels_root = pd.DataFrame.dropna(
+            self.labels_root, axis=0, how='any', thresh=None, subset=None, inplace=False)
+        
+        # Align images data with labels data
+        mask = np.delete(np.array(range(len(self.images[0][0]))), self.labels_root.index, None)
+        self.images = np.delete(self.images, mask, axis=2)
+
+        assert len(self.labels_root) == len(self.images[0][0])
+
+        images = []
+        # Transform each matrix into an image
+        for i in range(len(self.images[0][0])):
+            img = self.images[:,:,i]
+            img = Image.fromarray(img)
+
+            images.append(np.array(img))
+
+        self.images = images
+    
         # Env (train/test/validation)
         self.env = env
 
     # Method __len__ must be override in Pytorch
     def __len__(self):
-        return len(self.image_names)
+        return len(self.labels_root)
 
     # Method __getitem__ must be override in Pytorch
     def __getitem__(self, idx):
@@ -74,11 +83,10 @@ class MainDataset(Dataset):
 
         # Create Output object
         output = {
-            'image': np.array(Image.open(os.path.join(
-                self.root_dir, self.image_names[idx]))),
-            self.labels_type: self.labels_root.iloc[idx, 1:].as_matrix().reshape(-1, 2).astype('uint8')
+            'image': self.images[idx],
+            self.labels_type: self.labels_root.iloc[idx, :].as_matrix().reshape(-1, 2).astype('uint8')
         }
-
+        
         if self.env != 'test':
             # Transform Output with albumentation
             aug = Albumentation('kp', [self.images_size, self.images_size]).fast_aug()
@@ -88,11 +96,24 @@ class MainDataset(Dataset):
             else:
                 output = aug(**output)
 
+        
+        # plt.figure()
+        # plt.imshow(output['image'], cmap='gray')
+        # x = []
+        # y = []
+        # for i,j in output[self.labels_type]:
+        #     x.append(i)
+        #     y.append(j)
+        # plt.scatter(x, y)
+        # plt.show()
+
         # Normalize and generate tensor from output['image']
         output['image'] = torchvision.transforms.ToTensor()(output['image'])
         output['image'] = torchvision.transforms.Normalize(
-            (0.5, 0.5, 0.5), (0.5, 0.5, 0.5))(output['image'])
-        return output['image'], torch.Tensor(output[self.labels_type]).view(136)
+            (0.5,), (0.5,))(output['image'])
+        
+
+        return output['image'], torch.Tensor(output[self.labels_type]).view(len(output[self.labels_type]*2))
 
 
 if __name__ == '__main__':

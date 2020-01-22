@@ -5,6 +5,7 @@ import logging
 import os
 
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 from torch.autograd import Variable
 import utils
@@ -40,9 +41,10 @@ class Evaluate():
         # summary for current eval loop
         summ = []
 
+        cnt = 0
         # compute metrics over the dataset
         for (data_batch, labels_batch) in self.dataloader:
-
+            cnt += 1
             # move to GPU if available
             if self.params.cuda:
                 data_batch, labels_batch = data_batch.cuda(
@@ -53,6 +55,14 @@ class Evaluate():
             # compute model output
             output_batch = self.model(data_batch)
             loss = self.loss_fn(output_batch, labels_batch)
+
+            # if cnt == 2139:
+            #     plt.imshow(data_batch[0,0,:,:].data.cpu().numpy())
+            #     x = output_batch[0,:].data.cpu().numpy().reshape(-1,2)[:,0]
+            #     y = output_batch[0,:].data.cpu().numpy().reshape(-1,2)[:,1]
+            #     plt.scatter(x,y)
+            #     plt.show()
+            #     import pdb; pdb.set_trace()
 
             # extract data from torch Variable, move to cpu, convert to numpy arrays
             output_batch = output_batch.data.cpu().numpy()

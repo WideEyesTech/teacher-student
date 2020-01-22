@@ -1,12 +1,15 @@
 {
     "PATHS": {
-        "images": "/home/toni/Downloads/faces",
-        "filenames": "/tmp/filenames.txt",
-        "labelnames": "/home/toni/Downloads/faces/face_landmarks.csv"
+        "images": "/home/toni/Downloads/face_images.npy",
+        "filenames": "",
+        "labelnames": "/home/toni/Downloads/facial_keypoints.csv"
     },
     "DATASET": {
         "labels": {
             "type": "keypoints"
+        },
+        "images": {
+            "size": 96
         }
     } 
 }
