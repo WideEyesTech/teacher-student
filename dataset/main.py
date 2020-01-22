@@ -109,8 +109,7 @@ class MainDataset(Dataset):
 
         # Normalize and generate tensor from output['image']
         output['image'] = torchvision.transforms.ToTensor()(output['image'])
-        output['image'] = torchvision.transforms.Normalize(
-            (0.5,), (0.5,))(output['image'])
+       
         
 
         return output['image'], torch.Tensor(output[self.labels_type]).view(len(output[self.labels_type]*2))

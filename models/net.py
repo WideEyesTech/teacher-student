@@ -32,8 +32,8 @@ class Net(nn.Module):
         self.pool5 = nn.MaxPool2d(2, 2)
 
         #Linear Layer
-        self.fc1 = nn.Linear(2048, 200)
-        self.fc2 = nn.Linear(200, 30)
+        self.fc1 = nn.Linear(512*2*2, 256)
+        self.fc2 = nn.Linear(256, 30)
 
         # Dropouts
         self.drop1 = nn.Dropout(p = 0.1)
@@ -55,7 +55,8 @@ class Net(nn.Module):
         x = self.drop4(x)
         x = self.pool5(F.relu(self.conv5(x)))
         x = self.drop5(x)
-        x = x.view(x.size(0), -1)
+
+        x = x.view(1, x.size(1)*2*2)
         x = F.relu(self.fc1(x))
         x = self.drop6(x)
         x = self.fc2(x)
