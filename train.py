@@ -1,6 +1,5 @@
 """Training loop
 """
-from dataset.main import MainDataset
 from utils.average import RunningAverage
 from utils.checkpoints import CheckPoints
 from utils.json import DictToJson
@@ -13,16 +12,24 @@ import os
 import json
 
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torch.autograd import Variable
 from tqdm import tqdm
 
-import models.net as net
-from dataset.main import MainDataset as data_loader
 from evaluate import Evaluate
 
+
+# Load the config from json file
+config_path = os.path.join("./config.json")
+assert os.path.isfile(
+    config_path), "No json configuration file found at {}".format(config_path)
+config = Params(config_path)
+
+if config.DATASETS["active"] == "face_keypoints_dataset":
+    import models.face_keypoints_net as net
+    from dataset.face_keypoints_dataset import FaceKeypointsDataset as data_loader
 
 class Train():
     """Training loop main class
@@ -48,20 +55,27 @@ class Train():
         # summary for current training loop and a running average object for loss
         summ = []
         loss_avg = RunningAverage()
-        
+
         # Use tqdm for progress bar
         with tqdm(total=self.dataloader.__len__()) as t:
             for i, (train_batch, labels_batch) in enumerate(self.dataloader):  # move to GPU if available
                 if self.params.cuda:
                     train_batch, labels_batch = train_batch.cuda(
                         non_blocking=True), labels_batch.cuda(non_blocking=True)
-                # convert to torch Variables
-                train_batch, labels_batch = Variable(
-                    train_batch), Variable(labels_batch)
 
                 # compute model output and loss
                 output_batch = self.model(train_batch)
                 loss = self.loss_fn(output_batch, labels_batch)
+
+                # plt.imshow(train_batch[0, 0, :, :].data.cpu().numpy())
+                # x = output_batch[0, :].data.cpu().numpy().reshape(-1, 2)[:, 0]
+                # y = output_batch[0, :].data.cpu().numpy().reshape(-1, 2)[:, 1]
+                # x = (x + 0.5)*96
+                # y = (y + 0.5)*96
+                # plt.scatter(x, y, c='red')
+                # plt.show()
+                # import pdb
+                # pdb.set_trace()
 
                 # clear previous gradients, compute gradients of all variables wrt loss
                 self.optimizer.zero_grad()
@@ -161,18 +175,10 @@ def handleinput(args):
     """
 
     # Load the parameters from json file
-    json_path = os.path.join(args.model_dir, 'params.json')
+    params_path = os.path.join(args.model_dir, 'params.json')
     assert os.path.isfile(
-        json_path), "No json configuration file found at {}".format(json_path)
-    params = Params(json_path)
-
-    # Load paths info
-    with open('config.json') as f:
-        paths = json.load(f)['PATHS']
-
-    # Load dataset info
-    with open('config.json') as f:
-        dataset_info = json.load(f)['DATASET']
+        params_path), "No json configuration file found at {}".format(params_path)
+    params = Params(params_path)
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
@@ -189,10 +195,8 @@ def handleinput(args):
     logging.info("Loading the datasets...")
 
     # fetch dataloaders
-    train_dl = DataLoader(data_loader(
-        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'train', dataset_info['images']['size']), batch_size=params.batch_size)
-    val_dl = DataLoader(data_loader(
-        paths['images'], paths['filenames'], paths['labelnames'], dataset_info['labels']['type'], 'val', dataset_info['images']['size']), batch_size=params.batch_size)
+    train_dl = DataLoader(data_loader('train'), batch_size=params.batch_size)
+    val_dl = DataLoader(data_loader('val'), batch_size=params.batch_size)
 
     logging.info("- done.")
 
@@ -214,8 +218,14 @@ if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(
         description='Training over datsets creation')
     # TODO add default data root
-    PARSER.add_argument('--model_dir', default='experiments/base_model',
+    PARSER.add_argument('--model_dir', default='experiments/face_keypoints_dataset',
                         help="Directory containing the model hyperparams")
+    PARSER.add_argument('--base_config', default='config.json',
+                        help="Directory containing the model config")
+    PARSER.add_argument('--model', default='models/face_keypoints_net.py',
+                        help="Model to train")
+    PARSER.add_argument('--dataset', default='dataset/face_keypoints_dataset.py',
+                        help="Dataset to train over")
 
     ARGS = PARSER.parse_args()
     handleinput(ARGS)

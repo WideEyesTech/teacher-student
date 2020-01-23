@@ -9,12 +9,13 @@ import matplotlib.pyplot as plt
 import torch
 from torch.autograd import Variable
 import utils
-import models.net as net
-import dataset.main as data_loader
+import models.face_keypoints_net as net
+import dataset.face_keypoints_dataset as data_loader
 
 
 class Evaluate():
     """"""
+
     def __init__(self, model, loss_fn, dataloader, metrics, params):
         """Evaluate the model on `num_steps` batches.
         Args:
@@ -31,7 +32,7 @@ class Evaluate():
         self.dataloader = dataloader
         self.metrics = metrics
         self.params = params
-    
+
     def __call__(self):
         """"""
 
@@ -50,19 +51,24 @@ class Evaluate():
                 data_batch, labels_batch = data_batch.cuda(
                     non_blocking=True), labels_batch.cuda(non_blocking=True)
             # fetch the next evaluation batch
-            data_batch, labels_batch = Variable(data_batch), Variable(labels_batch)
+            data_batch, labels_batch = Variable(
+                data_batch), Variable(labels_batch)
 
             # compute model output
             output_batch = self.model(data_batch)
             loss = self.loss_fn(output_batch, labels_batch)
 
             # if cnt == 2139:
-            #     plt.imshow(data_batch[0,0,:,:].data.cpu().numpy())
-            #     x = output_batch[0,:].data.cpu().numpy().reshape(-1,2)[:,0]
-            #     y = output_batch[0,:].data.cpu().numpy().reshape(-1,2)[:,1]
-            #     plt.scatter(x,y)
+            #     plt.imshow(data_batch[0, 0, :, :].data.cpu().numpy())
+            #     x = output_batch[0, :].data.cpu().numpy().reshape(-1, 2)[:, 0]
+            #     y = output_batch[0, :].data.cpu().numpy().reshape(-1, 2)[:, 1]
+
+            #     x = (x + 0.5)*96
+            #     y = (y + 0.5)*96
+            #     plt.scatter(x, y, c='red')
             #     plt.show()
-            #     import pdb; pdb.set_trace()
+            #     import pdb
+            #     pdb.set_trace()
 
             # extract data from torch Variable, move to cpu, convert to numpy arrays
             output_batch = output_batch.data.cpu().numpy()
@@ -94,7 +100,7 @@ def handleinput(args):
     params = utils.Params(json_path)
 
     # use GPU if available
-    params.cuda = torch.cuda.is_available()# use GPU is available
+    params.cuda = torch.cuda.is_available()  # use GPU is available
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
@@ -132,14 +138,10 @@ def handleinput(args):
     utils.save_dict_to_json(test_metrics, save_path)
 
 
-if __name__ == '__main__':
+if __name__ == '__face_keypoints_dataset__':
+    # TODO evaluate script
     PARSER = argparse.ArgumentParser()
-    PARSER.add_argument('--data_dir', default='data/64x64_SIGNS',
-                        help="Directory containing the dataset")
-    PARSER.add_argument('--model_dir', default='experiments/base_model',
-                        help="Directory containing params.json")
-    PARSER.add_argument('--restore_file', default='best', help="name of the file in --model_dir \
-                        containing weights to load")
+    PARSER.add_argument()
 
     ARGS = PARSER.parse_args()
     handleinput(ARGS)

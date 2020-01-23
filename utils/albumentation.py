@@ -12,7 +12,7 @@ class Albumentation():
     """Albumentation module for image augmentation
     """
 
-    def __init__(self, label_type, resize):
+    def __init__(self, label_type, resize=[200, 200]):
         """ Add docstring !!!
         """
         self.label_type = label_type
@@ -44,7 +44,7 @@ class Albumentation():
             Resize(*self.resize),
         ]
 
-    def strong_aug(self, p=1):
+    def strong_aug(self, p=0.5):
         """ Add docstring !!!
         """
         if self.label_type == 'kp':
@@ -56,15 +56,16 @@ class Albumentation():
         # TODO should add defaul return
         return 0
 
-    def fast_aug(self, p=1):
+    def fast_aug(self, p=0.5):
         """ Add docstring !!!
         """
         fast_transform = [
             HorizontalFlip(),
-            Resize(*self.resize),
+            Flip(),
+            RandomRotate90(),
         ]
         if self.label_type == 'kp':
-            return Compose(fast_transform, p=p, keypoint_params=KeypointParams(format='xy'))
+            return Compose(fast_transform, p=p, keypoint_params=KeypointParams(format='xy', remove_invisible=False))
 
         #if self.label_type == 'bb':
             # TODO return Compose(fast_transform, p=p, bbox_params=BboxParams(formar='coco'))

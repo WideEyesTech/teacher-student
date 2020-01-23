@@ -1,15 +1,29 @@
 {
-    "PATHS": {
-        "images": "/home/toni/Downloads/face_images.npy",
-        "filenames": "",
-        "labelnames": "/home/toni/Downloads/facial_keypoints.csv"
-    },
-    "DATASET": {
-        "labels": {
-            "type": "keypoints"
-        },
-        "images": {
-            "size": 96
+    "DATASETS": {
+        "active": "face_keypoints_dataset",
+        "face_keypoints_dataset": {
+            "paths": {
+                "train": {
+                    "images": "/home/toni/Downloads/training.csv",
+                    "labels": "/home/toni/Downloads/training.csv"
+                },
+                "test": {
+                    "images": "/home/toni/Downloads/test.csv",
+                    "labels": "/home/toni/Downloads/test.csv"
+                },
+                "val": {
+                    "images": "/home/toni/Downloads/training.csv",
+                    "labels": "/home/toni/Downloads/training.csv"
+                }
+            },
+            "images": {
+                "size": 96
+            },
+            "hyperparams": "/home/toni/Desktop/teacher-student/experiments/face_keypoints_dataset",
+            "batches": {
+                "train": 1900,
+                "val": 240
+            }
         }
-    } 
+    }
 }

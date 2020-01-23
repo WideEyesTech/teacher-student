@@ -1,6 +1,0 @@
-create/fix simple network
-test both train and evaluate files
-clean code
-
-models
-    centernet
