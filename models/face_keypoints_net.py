@@ -1,9 +1,22 @@
 """Defines the neural network, losss function and metrics"""
 
+from utils.params import Params
+
 import numpy as np
+import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+# Load the config from json file
+CONFIG_PATH = "./config.json"
+assert os.path.isfile(
+    CONFIG_PATH), "No json configuration file found at {}".format(CONFIG_PATH)
+CONFIG = Params(CONFIG_PATH)
+
+ACTIVE_DATASET = CONFIG.DATASETS[CONFIG.DATASETS["active"]]
 
 
 class Net(nn.Module):
@@ -68,7 +81,11 @@ class Net(nn.Module):
 
 def loss_fn(outputs, labels):
     """"""
-    return nn.MSELoss()(outputs, labels)
+    if ACTIVE_DATASET["loss_fn"] == "MSE":
+        return nn.MSELoss()(outputs, labels)
+    
+    if ACTIVE_DATASET["loss_fn"] == "SL1":
+        return nn.SmoothL1Loss()(outputs, labels)
 
 
 def accuracy(outputs, labels):

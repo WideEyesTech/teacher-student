@@ -1,21 +1,21 @@
 {
-    "learning_rate": 1e-3,
-    "batch_size": 1,
-    "num_epochs": 20,
+    "learning_rate": 1e-4,
+    "batch_size": 32,
+    "num_epochs": 100,
     "num_channels": 32,
     "save_summary_steps": 100,
     "num_workers": 4,
-    "augmentation": 0,
+    "augmentation": 0.5,
     "change_aug_on_epoch": [
-        10,
-        0.2
+        60,
+        0
     ],
     "change_optimizer_on_epoch": [
-        10,
-        "SGD"
+        40,
+        "Adam"
     ],
     "change_learning_rate_on_epoch": [
-        10,
-        1e-6
+        40,
+        1e-2
     ]
 }

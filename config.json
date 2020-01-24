@@ -22,8 +22,9 @@
             "optimizer": "Adam",
             "loss_fn": "MSE",
             "metrics": "accuracy",
-            "show_preview": 1,
-            "show_last_epoch_result": 1,
+            "show_preview": 0,
+            "show_final_epoch_prediction": 0,
+            "show_last_prediction": 1,
             "hyperparams": "/home/toni/Desktop/teacher-student/experiments/face_keypoints_dataset",
             "batches": {
                 "train": 1900,

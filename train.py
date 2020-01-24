@@ -1,5 +1,7 @@
 """Training loop
 """
+from evaluate import Evaluate
+from tqdm import tqdm
 from utils.average import RunningAverage
 from utils.checkpoints import CheckPoints
 from utils.json import DictToJson
@@ -12,14 +14,13 @@ import logging
 import os
 
 import numpy as np
+import torchvision
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter()
 
-from evaluate import Evaluate
-
-# ----------- CONFIG VARIABLES ------------- #
 
 # Load the config from json file
 CONFIG_PATH = "./config.json"
@@ -34,8 +35,6 @@ if CONFIG.DATASETS["active"] == "face_keypoints_dataset":
 
 ACTIVE_DATASET = CONFIG.DATASETS[CONFIG.DATASETS["active"]]
 
-
-# ----------- MAIN CLASS ------------- #
 
 class Train():
     """Training loop main class
@@ -72,9 +71,14 @@ class Train():
                 loss = self.loss_fn(output_batch, labels_batch)
 
                 # Show last result from Epoch
-                if ACTIVE_DATASET["show_last_epoch_result"] and i == (self.dataloader.__len__()/self.params.batch_size) - 1:
+                if (ACTIVE_DATASET["show_final_epoch_prediction"] or self.params.show_prediction) and i == self.dataloader.__len__() - 1:
                     ShowFacialKeypoints(
                         train_batch, (output_batch + 0.5)*ACTIVE_DATASET["images"]["size"]).show()
+
+                    # Save results on Tensorboard
+                    grid = torchvision.utils.make_grid(train_batch)
+                    writer.add_image('images', grid, 0)
+                    writer.add_graph(self.model, train_batch)
 
                 # clear previous gradients, compute gradients of all variables wrt loss
                 self.optimizer.zero_grad()
@@ -101,6 +105,10 @@ class Train():
                 t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
                 t.update()
 
+                # Add info to tensorboard
+                writer.add_scalar('Loss/train', loss.item(), i)
+                writer.close()
+
         # compute mean of all metrics in summary
         metrics_mean = {metric: np.mean([x[metric]
                                          for x in summ]) for metric in summ[0]}
@@ -108,8 +116,6 @@ class Train():
                                     for k, v in metrics_mean.items())
         logging.info("- Train metrics: " + metrics_string)
 
-
-# ----------- MAIN CLASS ------------- #
 
 class TrainAndEval():
     """
@@ -139,9 +145,9 @@ class TrainAndEval():
                 logging.info("Loading the datasets...")
 
                 # fetch dataloaders
-                self.train_dataloader = DataLoader(data_loader(
+                train_dataloader = DataLoader(data_loader(
                     'train', self.params.augmentation), batch_size=self.params.batch_size)
-                self.val_dataloader = DataLoader(data_loader(
+                val_dataloader = DataLoader(data_loader(
                     'val', self.params.augmentation), batch_size=self.params.batch_size)
 
                 logging.info("- done.")
@@ -156,9 +162,9 @@ class TrainAndEval():
                 logging.info("Loading the datasets with new augmentation...")
 
                 # fetch dataloaders
-                self.train_dataloader = DataLoader(data_loader(
+                train_dataloader = DataLoader(data_loader(
                     'train', self.params.change_aug_on_epoch[1]), batch_size=self.params.batch_size)
-                self.val_dataloader = DataLoader(data_loader(
+                val_dataloader = DataLoader(data_loader(
                     'val', self.params.change_aug_on_epoch[1]), batch_size=self.params.batch_size)
 
                 logging.info("- done.")
@@ -177,13 +183,18 @@ class TrainAndEval():
                     self.optimizer = optim.SGD(
                         self.model.parameters(), lr=self.params.learning_rate)
 
+            # Show predictions
+            # Show last training prediction or not
+            if ACTIVE_DATASET["show_last_prediction"] and epoch == self.params.num_epochs-1:
+                self.params.show_prediction = True
+
             # compute number of batches in one epoch (one full pass over the training set)
             Train(self.model, self.optimizer, self.loss_fn,
-                  self.train_dataloader, self.metrics, self.params)()
+                  train_dataloader, self.metrics, self.params)()
 
             # Evaluate for one epoch on validation set
             val_metrics = Evaluate(
-                self.model, self.loss_fn, self.val_dataloader, self.metrics, self.params)()
+                self.model, self.loss_fn, val_dataloader, self.metrics, self.params)()
 
             val_acc = val_metrics['accuracy']
             is_best = val_acc >= best_val_acc
@@ -211,8 +222,6 @@ class TrainAndEval():
             DictToJson()(val_metrics, last_json_path)
 
 
-# ----------- USER INPUT HANDLERS ------------- #
-
 def handleinput(args):
     """Handle user input
     """
@@ -222,6 +231,9 @@ def handleinput(args):
     assert os.path.isfile(
         params_path), "No json configuration file found at {}".format(params_path)
     params = Params(params_path)
+
+    # Initialize show prediction param
+    params.show_prediction = False
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
@@ -255,7 +267,6 @@ def handleinput(args):
 if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(
         description='Training over datsets creation')
-    # TODO add default data root
     PARSER.add_argument('--model_dir', default='experiments/face_keypoints_dataset',
                         help="Directory containing the model hyperparams")
     PARSER.add_argument('--base_config', default='config.json',

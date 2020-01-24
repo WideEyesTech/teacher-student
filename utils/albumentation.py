@@ -3,7 +3,7 @@ from albumentations import (
     Blur, OpticalDistortion, GridDistortion, HueSaturationValue,
     GaussNoise, MotionBlur, MedianBlur, IAAPiecewiseAffine,
     RandomBrightnessContrast, OneOf, Compose, Resize, Flip, Transpose, CLAHE,
-    IAAAdditiveGaussianNoise, IAASharpen, IAAEmboss, ElasticTransform, Flip, VerticalFlip
+    IAAAdditiveGaussianNoise, IAASharpen, IAAEmboss, ElasticTransform, Flip, Rotate
 )
 
 from albumentations.core.composition import KeypointParams, BboxParams
@@ -31,11 +31,8 @@ class Albumentation():
                 RandomBrightnessContrast(),
             ], p=self.p),
             "spatial_level": OneOf([
-                Flip(),
                 HorizontalFlip(),
-                RandomRotate90(),
-                Transpose(),
-                VerticalFlip(),
+                Rotate(10)
             ], p=self.p),
         }
 
