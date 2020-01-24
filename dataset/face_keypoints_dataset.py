@@ -6,6 +6,8 @@ Load random augmented data from a root folder
 
 from utils.params import Params
 from utils.albumentation import Albumentation
+from utils.show_results import ShowFacialKeypoints
+
 import argparse
 import sys
 import os
@@ -22,10 +24,12 @@ sys.path.insert(0, 'utils/')
 
 
 # Load the config from json file
-config_path = os.path.join("./config.json")
+CONFIG_PATH = os.path.join("./config.json")
 assert os.path.isfile(
-    config_path), "No json configuration file found at {}".format(config_path)
-config = Params(config_path)
+    CONFIG_PATH), "No json configuration file found at {}".format(CONFIG_PATH)
+CONFIG = Params(CONFIG_PATH)
+
+ACTIVE_DATASET = CONFIG.DATASETS[CONFIG.DATASETS["active"]]
 
 
 class FaceKeypointsDataset(Dataset):
@@ -33,20 +37,23 @@ class FaceKeypointsDataset(Dataset):
 
     """
 
-    def __init__(self, env='train'):
+    def __init__(self, env='train', data_aug_prob=0.5):
         """Test FaceKeypointsDataset main class
         """
 
         # Env (train/test/validation)
         self.env = env
 
+        # Data augmentation probability
+        self.data_aug_prob = data_aug_prob
+
         # Load images
         self.images = pd.read_csv(
-            config.DATASETS["face_keypoints_dataset"]["paths"][self.env]["images"])['Image']
+            ACTIVE_DATASET["paths"][self.env]["images"])['Image']
 
         # Load labels
         self.labels = pd.read_csv(
-            config.DATASETS["face_keypoints_dataset"]["paths"][self.env]["labels"])
+            ACTIVE_DATASET["paths"][self.env]["labels"])
 
         self.labels = self.labels.loc[:,
                                       self.labels.columns != 'Image']
@@ -74,15 +81,21 @@ class FaceKeypointsDataset(Dataset):
 
         # Split train/val data
         if self.env == 'train':
-            self.images = self.images[: config.DATASETS["face_keypoints_dataset"]
+            self.images = self.images[: ACTIVE_DATASET
                                       ["batches"]["train"]]
-            self.labels = self.labels[: config.DATASETS["face_keypoints_dataset"]
+            self.labels = self.labels[: ACTIVE_DATASET
                                       ["batches"]["train"]]
         elif self.env == 'val':
-            self.images = self.images[config.DATASETS["face_keypoints_dataset"]
+            self.images = self.images[ACTIVE_DATASET
                                       ["batches"]["train"]:]
-            self.labels = self.labels[config.DATASETS["face_keypoints_dataset"]
+            self.labels = self.labels[ACTIVE_DATASET
                                       ["batches"]["train"]:]
+
+        # Show image with labels if enabled
+        if ACTIVE_DATASET["show_preview"]:
+            ShowFacialKeypoints(self.images, self.labels).show()
+
+
 
     # Method __len__ must be override in Pytorch
     def __len__(self):
@@ -100,9 +113,10 @@ class FaceKeypointsDataset(Dataset):
 
         # Do not apply data augmentation when testing
         if self.env != 'test':
-            # Transform Output with albumentation
+            # Transform output with albumentation
             aug = Albumentation(
-                'kp').fast_aug()
+                'kp', {"format": "xy", "remove_invisible": False}, "spatial_level", self.data_aug_prob).transform()
+
             if 'keypoints' == 'labels':
                 output['image'] = aug(output['image'])
             else:

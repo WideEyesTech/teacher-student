@@ -5,14 +5,13 @@ from utils.checkpoints import CheckPoints
 from utils.json import DictToJson
 from utils.params import Params
 from utils.logger import Logger
+from utils.show_results import ShowFacialKeypoints
 
 import argparse
 import logging
 import os
-import json
 
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -20,16 +19,23 @@ from tqdm import tqdm
 
 from evaluate import Evaluate
 
+# ----------- CONFIG VARIABLES ------------- #
 
 # Load the config from json file
-config_path = os.path.join("./config.json")
+CONFIG_PATH = "./config.json"
 assert os.path.isfile(
-    config_path), "No json configuration file found at {}".format(config_path)
-config = Params(config_path)
+    CONFIG_PATH), "No json configuration file found at {}".format(CONFIG_PATH)
+CONFIG = Params(CONFIG_PATH)
 
-if config.DATASETS["active"] == "face_keypoints_dataset":
+# Import active datasets
+if CONFIG.DATASETS["active"] == "face_keypoints_dataset":
     import models.face_keypoints_net as net
     from dataset.face_keypoints_dataset import FaceKeypointsDataset as data_loader
+
+ACTIVE_DATASET = CONFIG.DATASETS[CONFIG.DATASETS["active"]]
+
+
+# ----------- MAIN CLASS ------------- #
 
 class Train():
     """Training loop main class
@@ -42,8 +48,6 @@ class Train():
         self.dataloader = dataloader
         self.metrics = metrics
         self.params = params
-
-        return
 
     def __call__(self):
         """Start training loop
@@ -67,15 +71,10 @@ class Train():
                 output_batch = self.model(train_batch)
                 loss = self.loss_fn(output_batch, labels_batch)
 
-                # plt.imshow(train_batch[0, 0, :, :].data.cpu().numpy())
-                # x = output_batch[0, :].data.cpu().numpy().reshape(-1, 2)[:, 0]
-                # y = output_batch[0, :].data.cpu().numpy().reshape(-1, 2)[:, 1]
-                # x = (x + 0.5)*96
-                # y = (y + 0.5)*96
-                # plt.scatter(x, y, c='red')
-                # plt.show()
-                # import pdb
-                # pdb.set_trace()
+                # Show last result from Epoch
+                if ACTIVE_DATASET["show_last_epoch_result"] and i == (self.dataloader.__len__()/self.params.batch_size) - 1:
+                    ShowFacialKeypoints(
+                        train_batch, (output_batch + 0.5)*ACTIVE_DATASET["images"]["size"]).show()
 
                 # clear previous gradients, compute gradients of all variables wrt loss
                 self.optimizer.zero_grad()
@@ -110,20 +109,20 @@ class Train():
         logging.info("- Train metrics: " + metrics_string)
 
 
+# ----------- MAIN CLASS ------------- #
+
 class TrainAndEval():
     """
     """
 
-    def __init__(self, model, train_dataloader, val_dataloader, optimizer, loss_fn, metrics, params, model_dir):
+    def __init__(self, model, config, params, model_dir):
         """Train the model and evaluate every epoch.
         """
         self.model = model
         self.params = params
-        self.train_dataloader = train_dataloader
-        self.val_dataloader = val_dataloader
-        self.optimizer = optimizer
-        self.loss_fn = loss_fn
-        self.metrics = metrics
+        self.optimizer = config["optimizer"]
+        self.loss_fn = config["loss_fn"]
+        self.metrics = config["metrics"]
         self.params = params
         self.model_dir = model_dir
 
@@ -132,9 +131,51 @@ class TrainAndEval():
         best_val_acc = 0.0
 
         for epoch in range(self.params.num_epochs):
+
+            # Load datasets with default augmentation
+            # We run this before Epoch logger only on first load/epoch
+            if epoch == 0:
+                # Create the input data pipeline
+                logging.info("Loading the datasets...")
+
+                # fetch dataloaders
+                self.train_dataloader = DataLoader(data_loader(
+                    'train', self.params.augmentation), batch_size=self.params.batch_size)
+                self.val_dataloader = DataLoader(data_loader(
+                    'val', self.params.augmentation), batch_size=self.params.batch_size)
+
+                logging.info("- done.")
+
             # Run one epoch
             logging.info("Epoch {}/{}".format(epoch +
                                               1, self.params.num_epochs))
+
+            # Reload datasets if augmentation change
+            if epoch == self.params.change_aug_on_epoch[0]:
+                # Create the input data pipeline
+                logging.info("Loading the datasets with new augmentation...")
+
+                # fetch dataloaders
+                self.train_dataloader = DataLoader(data_loader(
+                    'train', self.params.change_aug_on_epoch[1]), batch_size=self.params.batch_size)
+                self.val_dataloader = DataLoader(data_loader(
+                    'val', self.params.change_aug_on_epoch[1]), batch_size=self.params.batch_size)
+
+                logging.info("- done.")
+
+            # Set learning rate depending on config and epoch
+            if epoch > self.params.change_learning_rate_on_epoch[0]:
+                self.params.learning_rate = self.params.change_learning_rate_on_epoch[1]
+
+            # Set optimizer depending on config and epoch
+            if self.optimizer == "Adam":
+                self.optimizer = optim.Adam(
+                    self.model.parameters(), lr=self.params.learning_rate)
+
+            if epoch > self.params.change_optimizer_on_epoch[0]:
+                if self.params.change_optimizer_on_epoch[1] == 'SGD':
+                    self.optimizer = optim.SGD(
+                        self.model.parameters(), lr=self.params.learning_rate)
 
             # compute number of batches in one epoch (one full pass over the training set)
             Train(self.model, self.optimizer, self.loss_fn,
@@ -170,6 +211,8 @@ class TrainAndEval():
             DictToJson()(val_metrics, last_json_path)
 
 
+# ----------- USER INPUT HANDLERS ------------- #
+
 def handleinput(args):
     """Handle user input
     """
@@ -191,27 +234,22 @@ def handleinput(args):
     # Set the logger
     Logger()(os.path.join(args.model_dir, 'train.log'))
 
-    # Create the input data pipeline
-    logging.info("Loading the datasets...")
-
-    # fetch dataloaders
-    train_dl = DataLoader(data_loader('train'), batch_size=params.batch_size)
-    val_dl = DataLoader(data_loader('val'), batch_size=params.batch_size)
-
-    logging.info("- done.")
-
     # Define the model and optimizer
     model = net.Net(params).cuda() if params.cuda else net.Net(params)
-    optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
 
     # fetch loss function and metrics
     loss_fn = net.loss_fn
     metrics = net.metrics
 
+    train_config = {
+        "optimizer": ACTIVE_DATASET["optimizer"],
+        "loss_fn": loss_fn,
+        "metrics": metrics,
+    }
+
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
-    TrainAndEval(model, train_dl, val_dl, optimizer,
-                 loss_fn, metrics, params, args.model_dir)()
+    TrainAndEval(model, train_config, params, args.model_dir)()
 
 
 if __name__ == '__main__':

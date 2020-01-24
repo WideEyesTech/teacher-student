@@ -1,8 +1,21 @@
 {
     "learning_rate": 1e-3,
     "batch_size": 1,
-    "num_epochs": 10,
+    "num_epochs": 20,
     "num_channels": 32,
     "save_summary_steps": 100,
-    "num_workers": 4
+    "num_workers": 4,
+    "augmentation": 0,
+    "change_aug_on_epoch": [
+        10,
+        0.2
+    ],
+    "change_optimizer_on_epoch": [
+        10,
+        "SGD"
+    ],
+    "change_learning_rate_on_epoch": [
+        10,
+        1e-6
+    ]
 }
