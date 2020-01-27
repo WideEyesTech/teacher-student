@@ -123,7 +123,7 @@ class FaceKeypointsDataset(Dataset):
                 output = aug(**output)
 
         # Normalize and generate tensor from output['image']
-        output['image'] = torchvision.transforms.ToTensor()(output['image'])
+        output['image'] = (torchvision.transforms.ToTensor()(output['image']) / abs(np.max(output['image'])) - 0.5) * 2
         output['keypoints'] = np.array(
             output['keypoints']) / self.images[idx].shape[:2] - 0.5
 

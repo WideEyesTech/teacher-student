@@ -1,2 +1,4 @@
 __pycache__
 *.pyc
+experiments/face_keypoints_dataset/train.log
+runs/

@@ -88,7 +88,7 @@ def loss_fn(outputs, labels):
         return nn.SmoothL1Loss()(outputs, labels)
 
 
-def accuracy(outputs, labels):
+def MSE(outputs, labels):
     """
     """
     return np.mean(np.sqrt(np.sum((labels - outputs)**2, 1)))
@@ -96,6 +96,6 @@ def accuracy(outputs, labels):
 
 # maintain all metrics required in this dictionary- these are used in the training and evaluation loops
 metrics = {
-    'accuracy': accuracy,
+    'MSE': MSE,
     # could add more metrics such as accuracy for each token type
 }

@@ -12,4 +12,4 @@ matplotlib
 Cython
 pycocotools
 tqdm
-tensorboard
+tensorboard=2.1.0

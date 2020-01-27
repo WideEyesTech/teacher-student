@@ -21,7 +21,7 @@
             },
             "optimizer": "Adam",
             "loss_fn": "MSE",
-            "metrics": "accuracy",
+            "metrics": "MSE",
             "show_preview": 0,
             "show_final_epoch_prediction": 0,
             "show_last_prediction": 1,

@@ -1,21 +1,22 @@
 {
-    "learning_rate": 1e-4,
+    "learning_rate": 1e-3,
     "batch_size": 32,
     "num_epochs": 100,
     "num_channels": 32,
     "save_summary_steps": 100,
     "num_workers": 4,
-    "augmentation": 0.5,
+    "augmentation": 0.2,
+    "weight_decay": 1e-8,
     "change_aug_on_epoch": [
-        60,
+        10,
         0
     ],
     "change_optimizer_on_epoch": [
-        40,
+        70,
         "Adam"
     ],
     "change_learning_rate_on_epoch": [
-        40,
+        70,
         1e-2
     ]
 }

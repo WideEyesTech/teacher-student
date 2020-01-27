@@ -70,6 +70,7 @@ class Train():
                 output_batch = self.model(train_batch)
                 loss = self.loss_fn(output_batch, labels_batch)
 
+
                 # Show last result from Epoch
                 if (ACTIVE_DATASET["show_final_epoch_prediction"] or self.params.show_prediction) and i == self.dataloader.__len__() - 1:
                     ShowFacialKeypoints(
@@ -176,7 +177,10 @@ class TrainAndEval():
             # Set optimizer depending on config and epoch
             if self.optimizer == "Adam":
                 self.optimizer = optim.Adam(
-                    self.model.parameters(), lr=self.params.learning_rate)
+                    self.model.parameters(),
+                    lr=self.params.learning_rate,
+                    weight_decay=self.params.weight_decay
+                    )
 
             if epoch > self.params.change_optimizer_on_epoch[0]:
                 if self.params.change_optimizer_on_epoch[1] == 'SGD':
@@ -196,8 +200,8 @@ class TrainAndEval():
             val_metrics = Evaluate(
                 self.model, self.loss_fn, val_dataloader, self.metrics, self.params)()
 
-            val_acc = val_metrics['accuracy']
-            is_best = val_acc >= best_val_acc
+            val_acc = val_metrics['MSE']
+            is_best = val_acc <= best_val_acc
 
             # Save weights
             CheckPoints().save({'epoch': epoch + 1,

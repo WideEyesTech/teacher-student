@@ -32,7 +32,7 @@ class Albumentation():
             ], p=self.p),
             "spatial_level": OneOf([
                 HorizontalFlip(),
-                Rotate(10)
+                Rotate(40)
             ], p=self.p),
         }
 
