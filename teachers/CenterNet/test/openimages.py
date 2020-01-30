@@ -71,7 +71,7 @@ def kp_decode(nnet, images, K, ae_threshold=0.5, kernel=3):
 
 def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
 
-    db_inds = db.db_inds[:3] if debug else db.db_inds
+    db_inds = db.db_inds[:10] if debug else db.db_inds
     num_images = db_inds.size
 
     K = db.configs["top_k"]
@@ -92,7 +92,7 @@ def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
 
     top_bboxes = {}
 
-    for ind in tqdm(range(0, num_images), ncols=80, desc="locating kps"):
+    for ind in tqdm(range(0, 1000000), ncols=80, desc="locating kps"):
         db_ind = db_inds[ind]
 
         image_id = db.image_ids(db_ind)
@@ -269,53 +269,59 @@ def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
                 top_bboxes[image_id][j] = top_bboxes[image_id][j][keep_inds]
 
         # Create dirs
-        Path(result_dir + "/{}".format(image_id[:-4])).mkdir(parents=True, exist_ok=True)
+        Path(result_dir +
+             "/{}".format(image_id[:-4])).mkdir(parents=True, exist_ok=True)
 
-        if debug:
-            image_file = db.image_file(db_ind)
-            image = cv2.imread(image_file)
-            im = image[:, :, (2, 1, 0)]
-            fig, ax = plt.subplots(figsize=(12, 12))
-            fig = ax.imshow(im, aspect='equal')
-            plt.axis('off')
-            fig.axes.get_xaxis().set_visible(False)
-            fig.axes.get_yaxis().set_visible(False)
-            #bboxes = {}
-            for j in range(1, categories + 1):
-                keep_inds = (top_bboxes[image_id][j][:, -1] >= 0.4)
-                cat_name = db.class_name(j)
-                for bbox in top_bboxes[image_id][j][keep_inds]:
-                    bbox = bbox[0:4].astype(np.int32)
-                    xmin = bbox[0]
-                    ymin = bbox[1]
-                    xmax = bbox[2]
-                    ymax = bbox[3]
-                    # if (xmax - xmin) * (ymax - ymin) > 5184:
-                    ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, fill=False, edgecolor=colours[j-1],
-                                               linewidth=4.0))
-                    ax.text(xmin+1, ymin-3, '{:s}'.format(cat_name), bbox=dict(facecolor=colours[j-1], ec='black', lw=2, alpha=0.5),
-                            fontsize=15, color='white', weight='bold')
+        # Paths
+        result_path = result_dir + "/{}".format(image_id[:-4])
+        result_json = os.path.join(result_path, "results.json")
+        result_debug = os.path.join(result_path, "{}.jpg".format(db_ind))
 
-            debug_file2 = os.path.join(
-                result_dir + "/{}".format(image_id[:-4]), "{}.jpg".format(db_ind))
-            # plt.savefig(debug_file1)
-            plt.savefig(debug_file2)
-            plt.close()
-            #cv2.imwrite(debug_file, image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+        detections = db.parse_detections(top_bboxes[image_id])
 
-        result_json = os.path.join(
-            result_dir + "/{}".format(image_id[:-4]), "results.json")
-        detections = db.parse_detections(top_bboxes)
         # if no valid detections
         if len(detections) == 0:
             shutil.rmtree(Path(result_dir + "/{}".format(image_id[:-4])))
+            continue
         else:
             # Save JSON
             with open(result_json, "w") as f:
                 json.dump(detections, f)
 
-    # cls_ids = list(range(1, categories + 1))
-    # image_ids = [db.image_ids(ind) for ind in db_inds]
+        # Save also images with labels
+        if debug:
+            # Get image
+            image_file = db.image_file(db_ind)
+            image = cv2.imread(image_file)
+            im = image[:, :, (2, 1, 0)]
+
+            # Create matplotlib fig
+            fig, ax = plt.subplots(figsize=(12, 12))
+            fig = ax.imshow(im, aspect='equal')
+            plt.axis('off')
+            fig.axes.get_xaxis().set_visible(False)
+            fig.axes.get_yaxis().set_visible(False)
+
+            for x in detections:
+                bbox = x["bbox"]
+
+                # Get points from width and height
+                bbox[2] += bbox[0]
+                bbox[3] += bbox[1]
+
+                xmin = bbox[0]
+                ymin = bbox[1]
+                xmax = bbox[2]
+                ymax = bbox[3]
+
+                ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, fill=False, edgecolor=colours[j-1],
+                                           linewidth=4.0))
+                ax.text(xmin+1, ymin-3, '{:s}'.format(x["category_id"]), bbox=dict(facecolor=colours[j-1], ec='black', lw=2, alpha=0.5),
+                        fontsize=15, color='white', weight='bold')
+
+            plt.savefig(result_debug)
+            plt.close()
+
     return 0
 
 

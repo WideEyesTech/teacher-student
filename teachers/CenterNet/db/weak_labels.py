@@ -103,26 +103,30 @@ class WeakLabels(DETECTION):
     def _to_float(self, x):
         return float("{:.2f}".format(x))
 
-    def parse_detections(self, all_bboxes):
+    def parse_detections(self, image):
+        
         detections = []
-        for image_id in all_bboxes:
-            for cls_ind in all_bboxes[image_id]:
-                category_id = self._cats[cls_ind]
-                for bbox in all_bboxes[image_id][cls_ind]:
-                    bbox[2] -= bbox[0]
-                    bbox[3] -= bbox[1]
+        for x in range(1, len(self._cats)):
+            category_id = self._cats[x]
+            # Filter boxes under score treshold
+            mask = image[x][:, -1] >= self.score_treshold
+            # Get all bboxes of one category
+            bboxes = image[x]
+            # Filter bboxes by score
+            bboxes = bboxes[mask]
+            for bbox in bboxes:
+                # Get width and height from points
+                bbox[2] -= bbox[0]
+                bbox[3] -= bbox[1]
+                score = bbox[4]
+                bbox = list(map(self._to_float, bbox[0:4]))
+                detection = {
+                    "image_id": x,
+                    "category_id": category_id,
+                    "bbox": bbox,
+                    "score": float("{:.2f}".format(score))
+                }
 
-                    score = bbox[4]
-                    bbox = list(map(self._to_float, bbox[0:4]))
-
-                    detection = {
-                        "image_id": image_id,
-                        "category_id": category_id,
-                        "bbox": bbox,
-                        "score": float("{:.2f}".format(score))
-                    }
-
-                    if score > self.score_treshold:
-                        detections.append(detection)
+                detections.append(detection)
 
         return detections
