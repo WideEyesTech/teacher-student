@@ -61,7 +61,7 @@ class Train():
 
         # Use tqdm for progress bar
         with tqdm(total=self.dataloader.__len__()) as t:
-            for i, (train_batch, labels_batch) in enumerate(self.dataloader):  # move to GPU if available
+            for i, (train_batch, labels_batch) in enumerate(self.dataloader): # move to GPU if available
                 if self.params.cuda:
                     train_batch, labels_batch = train_batch.cuda(
                         non_blocking=True), labels_batch.cuda(non_blocking=True)
@@ -135,7 +135,7 @@ class TrainAndEval():
 
     def __call__(self):
 
-        best_val_acc = 0.0
+        best_val_acc = 1000
 
         for epoch in range(self.params.num_epochs):
 

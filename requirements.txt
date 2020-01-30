@@ -1,6 +1,5 @@
 torch
 argparse
-env-file
 Pillow
 torchvision
 mock
@@ -11,5 +10,6 @@ opencv-python
 matplotlib
 Cython
 pycocotools
+cv2
 tqdm
 tensorboard=2.1.0

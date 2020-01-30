@@ -4,24 +4,21 @@ Load random augmented data from a root folder
 """
 # TODO improve documentation
 
-from utils.params import Params
-from utils.albumentation import Albumentation
-from utils.show_results import ShowFacialKeypoints
 
 import argparse
 import sys
 import os
+
 import pandas as pd
 import numpy as np
-
 import torch
 import torchvision
 from torch.utils.data import Dataset, DataLoader
-
 from PIL import Image
 
-sys.path.insert(0, 'utils/')
-
+from utils.params import Params
+from utils.albumentation import Albumentation
+from utils.show_results import ShowFacialKeypoints
 
 # Load the config from json file
 CONFIG_PATH = os.path.join("./config.json")
@@ -51,22 +48,35 @@ class FaceKeypointsDataset(Dataset):
         self.images = pd.read_csv(
             ACTIVE_DATASET["paths"][self.env]["images"])['Image']
 
-        # Load labels
-        self.labels = pd.read_csv(
-            ACTIVE_DATASET["paths"][self.env]["labels"])
+        if env != "test":
+            # Load labels
+            self.labels = pd.read_csv(
+                ACTIVE_DATASET["paths"][self.env]["labels"])
 
-        self.labels = self.labels.loc[:,
-                                      self.labels.columns != 'Image']
+            self.labels = self.labels.loc[:,
+                                          self.labels.columns != 'Image']
 
-        # Remove rows with missing values
-        self.labels = pd.DataFrame.dropna(
-            self.labels, axis=0, how='any', thresh=None, subset=None, inplace=False)
-        mask = np.delete(np.array(range(len(self.images.index))),
-                         self.labels.index, None)
-        self.images = self.images.drop(mask)
+            # Remove rows with missing values
+            self.labels = pd.DataFrame.dropna(
+                self.labels, axis=0, how='any', thresh=None, subset=None, inplace=False)
+            mask = np.delete(np.array(range(len(self.images.index))),
+                             self.labels.index, None)
+            self.images = self.images.drop(mask)
 
-        # Assert last step has been made propertly
-        assert len(self.labels) == len(self.images)
+            # Assert last step has been made propertly
+            assert len(self.labels) == len(self.images)
+
+            # Split train/val data
+            if self.env == 'train':
+                self.images = self.images[: ACTIVE_DATASET
+                                          ["batches"]["train"]]
+                self.labels = self.labels[: ACTIVE_DATASET
+                                          ["batches"]["train"]]
+            elif self.env == 'val':
+                self.images = self.images[ACTIVE_DATASET
+                                          ["batches"]["train"]:]
+                self.labels = self.labels[ACTIVE_DATASET
+                                          ["batches"]["train"]:]
 
         images = []
         # Transform each matrix into an image (1, 96, 96)
@@ -79,40 +89,26 @@ class FaceKeypointsDataset(Dataset):
 
         self.images = images
 
-        # Split train/val data
-        if self.env == 'train':
-            self.images = self.images[: ACTIVE_DATASET
-                                      ["batches"]["train"]]
-            self.labels = self.labels[: ACTIVE_DATASET
-                                      ["batches"]["train"]]
-        elif self.env == 'val':
-            self.images = self.images[ACTIVE_DATASET
-                                      ["batches"]["train"]:]
-            self.labels = self.labels[ACTIVE_DATASET
-                                      ["batches"]["train"]:]
-
         # Show image with labels if enabled
         if ACTIVE_DATASET["show_preview"]:
             ShowFacialKeypoints(self.images, self.labels).show()
 
-
-
     # Method __len__ must be override in Pytorch
     def __len__(self):
-        return len(self.labels)
+        return len(self.images)
 
     # Method __getitem__ must be override in Pytorch
     def __getitem__(self, idx):
 
         # Create Output object
-        landmarks = self.labels.iloc[idx, :].as_matrix().reshape(-1, 2)
-        output = {
-            'image': self.images[idx],
-            'keypoints': landmarks.astype(np.float32)
-        }
-
-        # Do not apply data augmentation when testing
         if self.env != 'test':
+            landmarks = self.labels.iloc[idx, :].as_matrix().reshape(-1, 2)
+
+            output = {
+                'image': self.images[idx],
+                'keypoints': landmarks.astype(np.float32)
+            }
+
             # Transform output with albumentation
             aug = Albumentation(
                 'kp', {"format": "xy", "remove_invisible": False}, "spatial_level", self.data_aug_prob).transform()
@@ -122,12 +118,15 @@ class FaceKeypointsDataset(Dataset):
             else:
                 output = aug(**output)
 
-        # Normalize and generate tensor from output['image']
-        output['image'] = (torchvision.transforms.ToTensor()(output['image']) / abs(np.max(output['image'])) - 0.5) * 2
-        output['keypoints'] = np.array(
-            output['keypoints']) / self.images[idx].shape[:2] - 0.5
+            # Normalize and generate tensor from output['image']
+            output['image'] = (torchvision.transforms.ToTensor()(
+                output['image']) / abs(np.max(output['image'])) - 0.5) * 2
+            output['keypoints'] = np.array(
+                output['keypoints']) / self.images[idx].shape[:2] - 0.5
 
-        return output['image'], torch.Tensor(output['keypoints'].reshape(output['keypoints'].shape[0]*2))
+            return output['image'], torch.Tensor(output['keypoints'].reshape(output['keypoints'].shape[0]*2))
+
+        return (torchvision.transforms.ToTensor()(self.images[idx]) / abs(np.max(self.images[idx])) - 0.5) * 2
 
 
 def handleinput(args):

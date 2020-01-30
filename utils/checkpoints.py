@@ -40,10 +40,12 @@ class CheckPoints():
         """
         if not os.path.exists(checkpoint):
             raise("File doesn't exist {}".format(checkpoint))
+        
         checkpoint = torch.load(checkpoint)
+
         model.load_state_dict(checkpoint['state_dict'])
 
         if optimizer:
             optimizer.load_state_dict(checkpoint['optim_dict'])
 
-        return checkpoint
+        return model

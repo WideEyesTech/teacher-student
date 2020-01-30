@@ -1,6 +1,6 @@
 {
     "DATASETS": {
-        "active": "face_keypoints_dataset",
+        "active": "openimages",
         "face_keypoints_dataset": {
             "paths": {
                 "train": {
@@ -8,8 +8,7 @@
                     "labels": "/home/toni/Downloads/training.csv"
                 },
                 "test": {
-                    "images": "/home/toni/Downloads/test.csv",
-                    "labels": "/home/toni/Downloads/test.csv"
+                    "images": "/home/toni/Downloads/test.csv"
                 },
                 "val": {
                     "images": "/home/toni/Downloads/training.csv",
@@ -25,11 +24,15 @@
             "show_preview": 0,
             "show_final_epoch_prediction": 0,
             "show_last_prediction": 1,
+            "dropout": 1,
             "hyperparams": "/home/toni/Desktop/teacher-student/experiments/face_keypoints_dataset",
             "batches": {
                 "train": 1900,
                 "val": 240
             }
+        },
+        "teachers": {
+            "active": "centernet"
         }
     }
 }
