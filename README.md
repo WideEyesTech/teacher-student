@@ -3,14 +3,12 @@
 
 
 - [Teacher-student project with SOTA teachers to improve student models results](#teacher-student-project-with-sota-teachers-to-improve-student-models-results)
-  - [## **Generate weak labels**](#h2-id%22generate-weak-labels-619%22generate-weak-labelsh2)
+  - [**Generate weak labels**](#generate-weak-labels)
     - [*With CenterNet*](#with-centernet)
       - [Set configs params](#set-configs-params)
 
 
----
 ## **Generate weak labels**
----
 
 ### *With CenterNet*
 
