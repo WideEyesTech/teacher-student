@@ -13,12 +13,12 @@ from test.openimages import testing
 
 if __name__ == "__main__":
     # Load config
-    CONFIG = json.load(open("./config/CenterNet104_teacher_student.json"))
+    CONFIG = json.load(open(system_configs.model_config))
     db = WeakLabels(CONFIG)
     # Load model
     MODEL = nnet(db)
     # Load snapshot
-    SNAPSHOT = torch.load("./cache/nnet/CenterNet-104_480000.pkl", map_location="cuda:0")
+    SNAPSHOT = torch.load(system_configs.snapshot_file, map_location="cuda:0")
     
     # Weights had been saved with DataParallel so we delete the "module." prefix to load them with single GPU
     WEIGHTS = OrderedDict()

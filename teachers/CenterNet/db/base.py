@@ -8,7 +8,7 @@ class BASE(object):
     def __init__(self):
         self._image_ids = [x.strip().replace("\n", "") for x in open(system_configs.filenames_dir)]
         self._db_inds = np.arange(len(self._image_ids))
-        self._score_treshold = 0.5
+        self._score_treshold = 0.7
 
         self._image_file      = system_configs.data_dir + "/{}"
 
