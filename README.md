@@ -5,14 +5,11 @@
 - [Teacher-student project with SOTA teachers to improve student models results](#teacher-student-project-with-sota-teachers-to-improve-student-models-results)
   - [**Generate weak labels**](#generate-weak-labels)
     - [*With CenterNet*](#with-centernet)
-      - [Set configs params](#set-configs-params)
 
 
 ## **Generate weak labels**
 
 ### *With CenterNet*
-
-#### Set configs params
 
 First of all set the proper params on the config.
 
@@ -42,5 +39,7 @@ self._configs["model_config"] = "/home/$USER/Desktop/teacher-student/teachers/Ce
 ```python
 def testing(db, nnet, result_dir, debug=False):
     # This way images will be saved too
-    return globals()[system_configs.sampling_function](db, nnet, =result_dir, debug=True)
+    return globals()[system_configs.sampling_function](db, nnet, result_dir, debug=True)
 ```
+
+When all config is ready just execute ***gen_weak_labels.py*** file

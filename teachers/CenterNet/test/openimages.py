@@ -92,7 +92,7 @@ def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
 
     top_bboxes = {}
 
-    for ind in tqdm(range(0, len(db.ids)), ncols=80, desc="locating kps"):
+    for ind in tqdm(range(0, num_images), ncols=80, desc="locating kps"):
         db_ind = db_inds[ind]
 
         image_id = db.image_ids(db_ind)
