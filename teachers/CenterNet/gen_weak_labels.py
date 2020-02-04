@@ -17,6 +17,9 @@ class GenerateWeakLabels():
         """
         Generate weak labels
         """
+
+        torch.device("cuda:0")
+
         # Load config
         CONFIG = json.load(open(system_configs.model_config))
         db = WeakLabels(CONFIG)
@@ -35,7 +38,7 @@ class GenerateWeakLabels():
 
         if torch.cuda.is_available():
             MODEL.cuda()
-        import pdb; pdb.set_trace()
+
         # Set evaluation mode
         MODEL.eval()
 

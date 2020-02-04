@@ -1,6 +1,7 @@
 import os
 import h5py
 import numpy as np
+from random import shuffle
 
 from config import system_configs
 
@@ -16,6 +17,8 @@ class BASE(object):
                 # Check if a folder with same path exists (check if predictino exists)
                 if not os.path.exists(os.path.join(system_configs.result_dir, x_f)):
                     self._image_ids.append(x)
+        
+        shuffle(self._image_ids)
         
         self._image_ids = list(filter(lambda x: not os.path.exists(os.path.join(system_configs.result_dir, x)), self._image_ids))
         self._db_inds = np.arange(len(self._image_ids))
