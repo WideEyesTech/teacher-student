@@ -13,3 +13,4 @@ pycocotools
 cv2
 tqdm
 tensorboard=2.1.0
+efficientnet_pytorch

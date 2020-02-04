@@ -1,7 +1,6 @@
 # Teacher-student project with SOTA teachers to improve student models results
 
 
-
 - [Teacher-student project with SOTA teachers to improve student models results](#teacher-student-project-with-sota-teachers-to-improve-student-models-results)
   - [**Generate weak labels**](#generate-weak-labels)
     - [*With CenterNet*](#with-centernet)
@@ -35,7 +34,7 @@ self._configs["model_config"] = "/home/$USER/Desktop/teacher-student/teachers/Ce
 * result_dir: folder to store the results
 * model_config: hyper params config file
 
-> **NOTE** Only JSON files will be saves as results. If you want to see also labeled images change *debug=False -> True* in teachers/CenterNet/test/openimages.py
+> **NOTE** Only JSON files will be saved as results. If you want to see also labeled images change *debug=False -> True* in teachers/CenterNet/test/openimages.py
 ```python
 def testing(db, nnet, result_dir, debug=False):
     # This way images will be saved too

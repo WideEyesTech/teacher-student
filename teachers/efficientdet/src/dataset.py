@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from pycocotools.coco import COCO
 import cv2
 
@@ -97,6 +97,23 @@ class CocoDataset(Dataset):
 
     def num_classes(self):
         return 80
+
+class OpenImages(Dataset):
+    def __init__(self, root_dir, filenames_dir):
+        self.root_dir = root_dir
+        self.filenames_dir = filenames_dir
+        self.filenames = [x.strip() for x in open(filenames_dir)]
+    
+    def __len__(self):
+        return len(self.filenames)
+
+    def __getitem__(self, idx):
+        img = cv2.imread(os.path.join(self.root_dir, self.filenames[idx]))
+        img = np.rollaxis(img, 2, 0)
+        img = img.astype(np.float32) / 255
+        
+        import pdb; pdb.set_trace()
+        return img
 
 
 def collater(data):

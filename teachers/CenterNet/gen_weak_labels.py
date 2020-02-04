@@ -35,7 +35,7 @@ class GenerateWeakLabels():
 
         if torch.cuda.is_available():
             MODEL.cuda()
-        
+        import pdb; pdb.set_trace()
         # Set evaluation mode
         MODEL.eval()
 

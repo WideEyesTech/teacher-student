@@ -2,7 +2,8 @@ import os
 import argparse
 import torch
 from torchvision import transforms
-from src.dataset import CocoDataset, Resizer, Normalizer
+from torch.utils.data import DataLoader
+from src.dataset import OpenImages
 from src.config import COCO_CLASSES, colors
 import cv2
 import shutil
@@ -12,32 +13,29 @@ def get_args():
     parser = argparse.ArgumentParser(
         "EfficientDet: Scalable and Efficient Object Detection implementation by Signatrix GmbH")
     parser.add_argument("--image_size", type=int, default=512, help="The common width and height for all images")
-    parser.add_argument("--data_path", type=str, default="data/COCO", help="the root folder of dataset")
+    parser.add_argument("--data_path", type=str, default="/home/toni/datasets/openimages", help="the root folder of dataset")
     parser.add_argument("--cls_threshold", type=float, default=0.5)
     parser.add_argument("--nms_threshold", type=float, default=0.5)
     parser.add_argument("--pretrained_model", type=str, default="trained_models/signatrix_efficientdet_coco.pth")
-    parser.add_argument("--output", type=str, default="predictions")
+    parser.add_argument("--output", type=str, default="/opt/results/Efficientdet7")
     args = parser.parse_args()
     return args
 
 
 
-def test(opt):
-    model = torch.load(opt.pretrained_model).module
-    model.cuda()
-    dataset = CocoDataset(opt.data_path, set='val2017', transform=transforms.Compose([Normalizer(), Resizer()]))
+def test(opt):    
+    model = torch.load(opt.pretrained_model, map_location="cpu").module
+    # model.cuda()
+    dataset = OpenImages(opt.data_path, "/tmp/oi_names.txt")
 
     if os.path.isdir(opt.output):
         shutil.rmtree(opt.output)
     os.makedirs(opt.output)
 
-    for index in range(len(dataset)):
-        data = dataset[index]
-        scale = data['scale']
+    for i, batch in enumerate(DataLoader(dataset)):
         with torch.no_grad():
-            scores, labels, boxes = model(data['img'].cuda().permute(2, 0, 1).float().unsqueeze(dim=0))
-            boxes /= scale
-
+            scores, labels, boxes = model(batch)
+        
         if boxes.shape[0] > 0:
             image_info = dataset.coco.loadImgs(dataset.image_ids[index])[0]
             path = os.path.join(dataset.root_dir, 'images', dataset.set_name, image_info['file_name'])

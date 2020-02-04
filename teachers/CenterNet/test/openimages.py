@@ -1,6 +1,5 @@
 import os
 import cv2
-import pdb
 import json
 import copy
 import numpy as np
@@ -94,10 +93,19 @@ def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
 
     for ind in tqdm(range(0, num_images), ncols=80, desc="locating kps"):
         db_ind = db_inds[ind]
-
         image_id = db.image_ids(db_ind)
         image_file = db.image_file(db_ind)
         image = cv2.imread(image_file)
+
+        # Create dirs
+        Path(result_dir +
+             "/{}".format(image_id[:-4])).mkdir(parents=True, exist_ok=True)
+
+        # Paths
+        result_path = result_dir + "/{}".format(image_id[:-4])
+        result_json = os.path.join(result_path, "results.json")
+        result_debug = os.path.join(result_path, "{}.jpg".format(db_ind))
+
 
         height, width = image.shape[0:2]
 
@@ -267,15 +275,6 @@ def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
             for j in range(1, categories + 1):
                 keep_inds = (top_bboxes[image_id][j][:, -1] >= thresh)
                 top_bboxes[image_id][j] = top_bboxes[image_id][j][keep_inds]
-
-        # Create dirs
-        Path(result_dir +
-             "/{}".format(image_id[:-4])).mkdir(parents=True, exist_ok=True)
-
-        # Paths
-        result_path = result_dir + "/{}".format(image_id[:-4])
-        result_json = os.path.join(result_path, "results.json")
-        result_debug = os.path.join(result_path, "{}.jpg".format(db_ind))
 
         detections = db.parse_detections(top_bboxes[image_id])
 

@@ -6,7 +6,18 @@ from config import system_configs
 
 class BASE(object):
     def __init__(self):
-        self._image_ids = [x.strip().replace("\n", "") for x in open(system_configs.filenames_dir)]
+
+        # Get images ids
+        self._image_ids = []
+        with open(system_configs.filenames_dir, "r") as filenames:
+            for x in filenames:
+                x = x.strip().replace("\n", "")
+                x_f = x.replace(".jpg", "")
+                # Check if a folder with same path exists (check if predictino exists)
+                if not os.path.exists(os.path.join(system_configs.result_dir, x_f)):
+                    self._image_ids.append(x)
+        
+        self._image_ids = list(filter(lambda x: not os.path.exists(os.path.join(system_configs.result_dir, x)), self._image_ids))
         self._db_inds = np.arange(len(self._image_ids))
         self._score_treshold = 0.7
 
