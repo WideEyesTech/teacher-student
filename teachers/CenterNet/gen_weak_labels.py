@@ -18,16 +18,14 @@ class GenerateWeakLabels():
         Generate weak labels
         """
 
-        torch.device("cuda:0")
-
         # Load config
         CONFIG = json.load(open(system_configs.model_config))
         db = WeakLabels(CONFIG)
         # Load model
         MODEL = nnet(db)
         # Load snapshot
-        SNAPSHOT = torch.load(system_configs.snapshot_file, map_location="cuda:0")
-        
+        SNAPSHOT = torch.load(system_configs.snapshot_file, map_location="cuda")
+
         # Weights had been saved with DataParallel so we delete the "module." prefix to load them with single GPU
         WEIGHTS = OrderedDict()
         for k, v in SNAPSHOT.items():

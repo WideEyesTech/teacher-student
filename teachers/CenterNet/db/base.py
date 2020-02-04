@@ -1,26 +1,45 @@
-import os
+from os import getpid
+from os.path import exists as pexists
+from os.path import join as pjoin
+from multiprocessing import Pool
 import h5py
 import numpy as np
 from random import shuffle
-
+import tqdm
 from config import system_configs
+
+
+def check_detection_file(params):
+    filename = params
+    # Check if a folder with same path exists (check if predictino exists)
+    return pexists(filename)
+
 
 class BASE(object):
     def __init__(self):
 
         # Get images ids
         self._image_ids = []
-        with open(system_configs.filenames_dir, "r") as filenames:
-            for x in filenames:
-                x = x.strip().replace("\n", "")
+
+        params = []
+        filenames = []
+        with open(system_configs.filenames_dir, "r") as fid:
+            for x in fid:
+                x = x.strip()
                 x_f = x.replace(".jpg", "")
-                # Check if a folder with same path exists (check if predictino exists)
-                if not os.path.exists(os.path.join(system_configs.result_dir, x_f)):
-                    self._image_ids.append(x)
+                params.append(pjoin(system_configs.result_dir, x_f))
+                filenames.append(x)
+
+        pool = Pool(16)
+        res = list(tqdm.tqdm(pool.imap(check_detection_file,
+                                       params),
+                             total=len(params)))
+        # res = pool.map(check_detection_file, params)
+
+        self._image_ids = [x for x, y in zip(filenames, res) if not y]
         
         shuffle(self._image_ids)
         
-        self._image_ids = list(filter(lambda x: not os.path.exists(os.path.join(system_configs.result_dir, x)), self._image_ids))
         self._db_inds = np.arange(len(self._image_ids))
         self._score_treshold = 0.7
 
