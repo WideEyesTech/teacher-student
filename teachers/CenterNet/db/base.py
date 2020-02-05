@@ -128,7 +128,7 @@ class BASE(object):
 
     def shuffle_inds(self, quiet=False):
         if self._data_rng is None:
-            self._data_rng = np.random.RandomState(os.getpid())
+            self._data_rng = np.random.RandomState(getpid())
 
         if not quiet:
             print("shuffling indices...")

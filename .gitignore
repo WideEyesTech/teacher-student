@@ -5,3 +5,4 @@ runs/
 teachers/CenterNet/results/
 *.pkl
 **/**/*.pkl
+*.pth
