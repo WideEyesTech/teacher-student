@@ -9,7 +9,7 @@ class Config:
 
         # Directories
         self._configs["data_dir"] = "/home/toni/datasets/openimages"
-        self._configs["filenames_dir"] = "/tmp/oi_names.txt"
+        self._configs["filenames_dir"] = "/tmp/sorted_4_oi_names.txt"
         self._configs["cache_dir"] = "/home/toni/Desktop/teacher-student/teachers/CenterNet/cache"
         self._configs["snapshot_name"] = "CenterNet-104_480000"
         self._configs["result_dir"] = "/opt/results"

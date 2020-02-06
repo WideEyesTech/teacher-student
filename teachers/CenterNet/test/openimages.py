@@ -97,12 +97,11 @@ def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
         image_file = db.image_file(db_ind)
         image = cv2.imread(image_file)
 
+        result_path = result_dir + "/{}".format(image_id[:-4])
         # Create dirs
-        Path(result_dir +
-             "/{}".format(image_id[:-4])).mkdir(parents=True, exist_ok=True)
+        Path(result_path).mkdir(parents=True, exist_ok=True)
 
         # Paths
-        result_path = result_dir + "/{}".format(image_id[:-4])
         result_json = os.path.join(result_path, "results.json")
         result_debug = os.path.join(result_path, "{}.jpg".format(db_ind))
 
@@ -280,7 +279,7 @@ def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
 
         # if no valid detections
         if len(detections) == 0:
-            shutil.rmtree(Path(result_dir + "/{}".format(image_id[:-4])))
+            # shutil.rmtree(Path(result_dir + "/{}".format(image_id[:-4])))
             continue
         else:
             # Save JSON

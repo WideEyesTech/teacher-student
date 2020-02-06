@@ -167,6 +167,7 @@ def show_result(img,
             color_mask = color_masks[labels[i]]
             mask = maskUtils.decode(segms[i]).astype(np.bool)
             img[mask] = img[mask] * 0.5 + color_mask * 0.5
+
     # draw bounding boxes
     mmcv.imshow_det_bboxes(
         img,
