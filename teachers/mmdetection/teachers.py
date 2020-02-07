@@ -44,22 +44,7 @@ class Dataset():
         self.results_dir = results_dir
 
         # Get images ids
-        params = []
-        filenames = []
-        with open(self.filenames_dir, "r") as fid:
-            for x in fid:
-                x = x.strip()
-                x_f = x.replace(".jpg", "")
-                params.append(pjoin(self.results_dir, x_f))
-                filenames.append(x)
-        pool = Pool(16)
-        res = list(tqdm(pool.imap(check_detection_file,
-                                       params),
-                             total=len(params)))
-        self.image_ids = [x for x, y in zip(filenames, res) if not y]
-        pool.close()
-        shuffle(self.image_ids)
-        # self.image_ids = [x.strip() for x in open(self.filenames_dir)]
+        self.image_ids = [x.strip() for x in open(self.filenames_dir)]
 
     def getimage(self, idx):
         return cv2.imread(pjoin(self.data_dir, self.image_ids[idx]))
