@@ -61,6 +61,10 @@ if __name__ == '__main__':
 
     for i in tqdm(range(len(dataset.image_ids)), ncols=80, desc="Predicting..."):
 
+        # Get image
+        image = dataset.getimage(i)
+        image_id = dataset.image_ids[i]
+        
         # Paths
         result_path = args.results_dir + "/{}".format(image_id[:-4])
         Path(result_path).mkdir(parents=True, exist_ok=True)
@@ -68,10 +72,6 @@ if __name__ == '__main__':
 
         if pexists(result_json):
             continue
-
-        # Get image
-        image = dataset.getimage(i)
-        image_id = dataset.image_ids[i]
 
         # Init model
         model = init_detector(
