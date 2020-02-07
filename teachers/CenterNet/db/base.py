@@ -19,7 +19,7 @@ class BASE(object):
     def __init__(self):
 
         # Get images ids
-        self.image_ids = [x.strip() for x in open(system_configs.filenames_dir)]
+        self._image_ids = [x.strip() for x in open(system_configs.filenames_dir)]
         
         shuffle(self._image_ids)
         

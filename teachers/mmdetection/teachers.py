@@ -45,6 +45,7 @@ class Dataset():
 
         # Get images ids
         self.image_ids = [x.strip() for x in open(self.filenames_dir)]
+        shuffle(self.image_ids)
 
     def getimage(self, idx):
         return cv2.imread(pjoin(self.data_dir, self.image_ids[idx]))
