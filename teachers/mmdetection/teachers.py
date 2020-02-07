@@ -1,5 +1,7 @@
 import argparse
 import json
+import time
+import random
 from os.path import join as pjoin
 from os.path import exists as pexists
 from random import shuffle
@@ -45,6 +47,8 @@ class Dataset():
 
         # Get images ids
         self.image_ids = [x.strip() for x in open(self.filenames_dir)]
+
+        random.seed(time.time())
         shuffle(self.image_ids)
 
     def getimage(self, idx):
@@ -59,12 +63,16 @@ if __name__ == '__main__':
 
     dataset = Dataset(args.data_dir, args.filenames_dir, args.results_dir)
 
+    # Init model
+    model = init_detector(
+        args.config, args.checkpoint, device=torch.device('cuda', args.device))
+
     for i in tqdm(range(len(dataset.image_ids)), ncols=80, desc="Predicting..."):
 
         # Get image
         image = dataset.getimage(i)
         image_id = dataset.image_ids[i]
-        
+
         # Paths
         result_path = args.results_dir + "/{}".format(image_id[:-4])
         Path(result_path).mkdir(parents=True, exist_ok=True)
@@ -72,10 +80,6 @@ if __name__ == '__main__':
 
         if pexists(result_json):
             continue
-
-        # Init model
-        model = init_detector(
-            args.config, args.checkpoint, device=torch.device('cuda', args.device))
 
         # Make inference
         result = inference_detector(model, image)
@@ -100,7 +104,6 @@ if __name__ == '__main__':
             cv2.destroyAllWindows()
         if DEMO and i == 5:
             break
-
 
         # Save results
         if len(detections) != 0:
