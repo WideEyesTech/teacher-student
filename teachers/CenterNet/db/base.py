@@ -19,24 +19,7 @@ class BASE(object):
     def __init__(self):
 
         # Get images ids
-        self._image_ids = []
-
-        params = []
-        filenames = []
-        with open(system_configs.filenames_dir, "r") as fid:
-            for x in fid:
-                x = x.strip()
-                x_f = x.replace(".jpg", "")
-                params.append(pjoin(system_configs.result_dir, x_f))
-                filenames.append(x)
-
-        pool = Pool(16)
-        res = list(tqdm.tqdm(pool.imap(check_detection_file,
-                                       params),
-                             total=len(params)))
-        # res = pool.map(check_detection_file, params)
-
-        self._image_ids = [x for x, y in zip(filenames, res) if not y]
+        self.image_ids = [x.strip() for x in open(system_configs.filenames_dir)]
         
         shuffle(self._image_ids)
         
