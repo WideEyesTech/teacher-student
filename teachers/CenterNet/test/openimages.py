@@ -1,4 +1,5 @@
 import os
+from os.path import exists as pexists
 import cv2
 import json
 import copy
@@ -97,14 +98,16 @@ def kp_detection(db, nnet, result_dir, debug=True, decode_func=kp_decode):
         image_file = db.image_file(db_ind)
         image = cv2.imread(image_file)
 
-        result_path = result_dir + "/{}".format(image_id[:-4])
-        # Create dirs
-        Path(result_path).mkdir(parents=True, exist_ok=True)
-
         # Paths
+        result_path = result_dir + "/{}".format(image_id[:-4])
         result_json = os.path.join(result_path, "results.json")
         result_debug = os.path.join(result_path, "{}.jpg".format(db_ind))
-
+        
+        if pexists(result_json):
+            continue
+        
+        # Create dirs
+        Path(result_path).mkdir(parents=True, exist_ok=True)
 
         height, width = image.shape[0:2]
 

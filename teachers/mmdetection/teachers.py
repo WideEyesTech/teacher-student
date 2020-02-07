@@ -75,6 +75,14 @@ if __name__ == '__main__':
 
     for i in tqdm(range(len(dataset.image_ids)), ncols=80, desc="Predicting..."):
 
+        # Paths
+        result_path = args.results_dir + "/{}".format(image_id[:-4])
+        Path(result_path).mkdir(parents=True, exist_ok=True)
+        result_json = pjoin(result_path, "results.json")
+
+        if pexists(result_json):
+            continue
+
         # Get image
         image = dataset.getimage(i)
         image_id = dataset.image_ids[i]
@@ -107,11 +115,8 @@ if __name__ == '__main__':
         if DEMO and i == 5:
             break
 
-        # Save results
-        result_path = args.results_dir + "/{}".format(image_id[:-4])
-        Path(result_path).mkdir(parents=True, exist_ok=True)
-        result_json = pjoin(result_path, "results.json")
 
+        # Save results
         if len(detections) != 0:
             with open(result_json, "w") as f:
                 json.dump(detections, f)
