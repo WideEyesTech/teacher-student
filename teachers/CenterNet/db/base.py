@@ -4,8 +4,10 @@ from os.path import join as pjoin
 from multiprocessing import Pool
 import h5py
 import numpy as np
+import random
 from random import shuffle
 import tqdm
+import time
 from config import system_configs
 
 
@@ -19,26 +21,28 @@ class BASE(object):
     def __init__(self):
 
         # Get images ids
-        self._image_ids = [x.strip() for x in open(system_configs.filenames_dir)]
+        self._image_ids = [x.strip()
+                           for x in open(system_configs.filenames_dir)]
         
+        random.seed(time.time())
         shuffle(self._image_ids)
-        
+
         self._db_inds = np.arange(len(self._image_ids))
         self._score_treshold = 0.7
 
-        self._image_file      = system_configs.data_dir + "/{}"
+        self._image_file = system_configs.data_dir + "/{}"
 
-        self._mean    = np.zeros((3, ), dtype=np.float32)
-        self._std     = np.ones((3, ), dtype=np.float32)
+        self._mean = np.zeros((3, ), dtype=np.float32)
+        self._std = np.ones((3, ), dtype=np.float32)
         self._eig_val = np.ones((3, ), dtype=np.float32)
         self._eig_vec = np.zeros((3, 3), dtype=np.float32)
 
-        self._configs             = {}
-        self._train_cfg           = {}
-        self._model               = {}
+        self._configs = {}
+        self._train_cfg = {}
+        self._model = {}
         self._configs["data_aug"] = True
 
-        self._data_rng            = None
+        self._data_rng = None
 
     @property
     def data(self):
@@ -107,7 +111,6 @@ class BASE(object):
 
     def write_result(self, ind, all_bboxes, all_scores):
         pass
-
 
     def shuffle_inds(self, quiet=False):
         if self._data_rng is None:

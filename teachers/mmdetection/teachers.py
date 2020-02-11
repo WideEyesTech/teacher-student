@@ -62,7 +62,6 @@ if __name__ == '__main__':
     DEMO = False
 
     dataset = Dataset(args.data_dir, args.filenames_dir, args.results_dir)
-
     # Init model
     model = init_detector(
         args.config, args.checkpoint, device=torch.device('cuda', args.device))
