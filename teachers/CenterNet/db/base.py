@@ -24,7 +24,7 @@ class BASE(object):
         self._image_ids = [x.strip()
                            for x in open(system_configs.filenames_dir)]
         
-        random.seed(time.time())
+        random.seed(int(time.time()))
         shuffle(self._image_ids)
 
         self._db_inds = np.arange(len(self._image_ids))

@@ -48,7 +48,7 @@ class Dataset():
         # Get images ids
         self.image_ids = [x.strip() for x in open(self.filenames_dir)]
 
-        random.seed(time.time())
+        random.seed(int(time.time()))
         shuffle(self.image_ids)
 
     def getimage(self, idx):
@@ -73,7 +73,7 @@ if __name__ == '__main__':
         image_id = dataset.image_ids[i]
 
         # Paths
-        result_path = args.results_dir + "/{}".format(image_id[:-4])
+        result_path = pjoin(args.results_dir, image_id[:-4])
         Path(result_path).mkdir(parents=True, exist_ok=True)
         result_json = pjoin(result_path, "results.json")
 
