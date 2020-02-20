@@ -111,7 +111,7 @@ def print_results(results, model, image, color):
 
         ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, fill=False, edgecolor=color,
                                    linewidth=4.0))
-        ax.text(xmin+1, ymin-3, '{:s}'.format(model+"_"+CLASSES_BASIC[int(result[-1])]), bbox=dict(facecolor=color, ec='black', lw=2, alpha=0.5),
+        ax.text(xmin+1, ymin-3, '{:s}'.format(model+"_"+CLASSES_BASIC[int(result[4:].argmax())]), bbox=dict(facecolor=color, ec='black', lw=2, alpha=0.5),
                 fontsize=15, color='white', weight='bold')
 
     plt.show()
@@ -130,14 +130,11 @@ def merge_bboxes(bboxA, bboxB, method="mean"):
 
 # bboxes -> [x1, y1, x2, y2, score1, score2, ..., scoreN, category]
 def combine(bboxesA, bboxesB, thr=0.7):
-
-    cluster = []
-
     ious = cytools.bbox_overlaps(bboxesA[:, :4], bboxesB[:, :4])
     # [
-    #     [0.4, 0.0, 0.05, 0.1, 0.9],
-    #     [0.9, 0.23, 0.0, 0.1, 0.1],
-    #     [0.6, 0.1, 0.2, 0.1, 0.1],
+    #   [0.4, 0.0, 0.05, 0.1, 0.9],
+    #   [0.9, 0.23, 0.0, 0.1, 0.1],
+    #   [0.6, 0.1, 0.2, 0.1, 0.1],
     # ]
 
     max_ious = ious.max(1)  # [0.9, 0.9, 0.6]
@@ -146,32 +143,31 @@ def combine(bboxesA, bboxesB, thr=0.7):
     # [True, True, False]
 
     rels = ious.argmax(1)
-    # [2, 4, 1, 3, 5]
-    for i in range(len(oks)):
-        if oks[i]:
-            new_bbox = merge_bboxes(
-                bboxesA[i, :4], bboxesB[rels[i], :4], method='mean')  # [x1, y1, x2, y2]
-            # [score1, score2, ..., scoreN]
-            new_score = merge_scores(
-                bboxesA[i, 4:-1], bboxesB[rels[i], 4:-1], method='mean')
-            cluster.append([*new_bbox, *new_score, bboxesA[i, -1]])
-        else:
-            cluster.append(bboxesA[i])
+    # [4, 0, 0]
 
-    max_iousB = ious.max(0)  # [0.9, 0.23, 0.2, 0.9]
+    if oks.size:
+        bboxesC = (bboxesA[oks, :] + bboxesB[rels[oks], :]) / 2
+
+    no_oks = oks == False
+    # [False, False, True]
+    
+    bboxesC = np.vstack((bboxesC, bboxesA[no_oks, :]))
+
+    max_iousB = ious.max(0)  # [0.9, 0.23, 0.2, 0.1, 0.9]
 
     oksB = max_iousB > thr
-    # [True, False, False, True]
+    # [True, False, False, False, True]
 
-    for x in range(len(bboxesB)):
-        if not oksB[x]:
-            cluster.append(bboxesB[x])
+    no_oksB = oksB == False
+    # [False, True, True, True, False]
+
+    bboxesC = np.vstack((bboxesC, bboxesB[no_oksB, :]))
 
     # [x1, y1, x2, y2, score1, score2, ..., scoreN, category]
-    return np.array(cluster)
+    return bboxesC
 
 
-def parse_teacher_results(x):
+def parse_teacher_results(inference):
     # Enum like dict wih indices for each classname
     classes = {
         'airplane': 4,
@@ -257,43 +253,44 @@ def parse_teacher_results(x):
     }
 
     # Parse category name to make data more consistent removing underscores and spaces
-    category = x["category_id"].replace("_", "").replace(" ", "")
+    category = inference["category_id"].replace("_", "").replace(" ", "")
 
     # Transform score to a len(classes) 0 valued list
     # with the score value in the category position of the list
     # [0, 0, 0 ,0 , 0.8, ... 0]
-    score = np.zeros(len(classes))
+    score = [0]*len(classes)
     category_position = classes[category]
-    score[category_position] = x["score"]
+    score[category_position] = inference["score"]
 
     # Return new data structure
-    return [*x["bbox"], *score, classes[category]]
+    return inference["bbox"] + score
 
 
 # Convert bbox from: xmin, ymin, width, height -- to --> xmin, ymin, xmax, ymax
-def convert_bbox(x):
+def convert_bbox(inference):
 
     # We cannot mutate original iterator
 
-    x1 = x["bbox"][0]
-    x2 = x["bbox"][2] + x["bbox"][0]
-    y1 = x["bbox"][1]
-    y2 = x["bbox"][3] + x["bbox"][1]
+    x1 = inference["bbox"][0]
+    x2 = inference["bbox"][2] + inference["bbox"][0]
+    y1 = inference["bbox"][1]
+    y2 = inference["bbox"][3] + inference["bbox"][1]
 
     return {
-        "category_id": x["category_id"],
+        "category_id": inference["category_id"],
         "bbox": [x1, y1, x2, y2],
-        "score": x["score"]
+        "score": inference["score"]
     }
 
 
 def cluster():
 
     # Enable debugging features
-    debug = True
+    debug = False
 
     # Make sure the experiment does not repeat
-    random.seed(int(time.time()))
+    # random.seed(int(time.time()))
+    random.seed(0)
 
     # Paths
     data_dir = "/home/toni/datasets/openimages"
@@ -319,22 +316,22 @@ def cluster():
 
         # Check if all teachets have inferences
         # of the file, otherwise skip loop
-        all_teachers_have_infered = True
+        all_teachers_have_inferred = True
         for teacher in teachers:
             # Get results path for each teacher
             teacher_inferences = pjoin(inferences_path, teacher)
 
             if not pexists(pjoin(teacher_inferences, file)):
-                all_teachers_have_infered = False
+                all_teachers_have_inferred = False
 
-        if not all_teachers_have_infered:
+        if not all_teachers_have_inferred:
             continue
 
         # In case all teachers have inferences
         # of the file
 
         # Start clustering
-        for i, teacher in enumerate(teachers):
+        for index, teacher in enumerate(teachers):
 
             # Get results path for each teacher
             teacher_inferences = pjoin(inferences_path, teacher)
@@ -344,9 +341,6 @@ def cluster():
             # Read teacher file inferences
             with open(file_inferences) as f_i:
                 inferences = json.load(f_i)
-
-            # Convert inferences to numpy
-            inferences = np.array(inferences)
 
             # We need to parse Centernet bbox, so we must check
             # if teacher is centernet
@@ -360,13 +354,13 @@ def cluster():
             if debug:
                 print_results(inferences, teacher, image, "red")
 
-            # Do not cluster untill there are at least two teachers
-            if i == 0:
+            # Do not cluster until there are at least two teachers
+            if index == 0:
                 cluster_result = inferences
                 continue
-
+            idxs = np.random.permutation(np.array(inferences).shape[0])
             cluster_result = combine(
-                np.array(cluster_result), np.array(inferences))
+                np.array(cluster_result), np.array(inferences)[idxs])
 
         # Print clustering result
         if debug:
@@ -380,9 +374,9 @@ if __name__ == "__main__":
     # next(cluster())
     # return
 
-    number_of_examples = 1000
+    NUMBER_OF_EXAMPLES = 1000
 
     for i, x in enumerate(cluster()):
-        if i == number_of_examples:
+        if i == NUMBER_OF_EXAMPLES:
             break
         continue
