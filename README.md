@@ -4,6 +4,7 @@
 - [Teacher-student project with SOTA teachers to improve student models results](#teacher-student-project-with-sota-teachers-to-improve-student-models-results)
   - [**Generate weak labels**](#generate-weak-labels)
     - [*With CenterNet*](#with-centernet)
+    - [*With mmdetection (ATSS, GCNET)*](#with-mmdetection-atss-gcnet)
 
 
 ## **Generate weak labels**
@@ -41,4 +42,18 @@ def testing(db, nnet, result_dir, debug=False):
     return globals()[system_configs.sampling_function](db, nnet, result_dir, debug=True)
 ```
 
-When all config is ready just execute ***gen_weak_labels.py*** file
+When all config is ready just execute ***get_teacher_inferences.py centernet {gpu number}***
+
+
+### *With mmdetection (ATSS, GCNET)*
+
+Execute 
+***get_teacher_inferences.py mmdetection {gpu number}*** and follow the steps
+
+Recommended config:
+
+    OS: Ubuntu 18.04
+    CUDA: 9.0
+    NVCC: 9.0
+    GCC(G++): 5.5
+

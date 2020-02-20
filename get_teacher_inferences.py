@@ -17,7 +17,7 @@ def handleinput(args):
     if args.teacher == "centernet":
         system("CUDA_VISIBLE_DEVICES={} nice -n1 python3 teachers/gen_weak_labels.py".format(args.gpu_number))
 
-    if args.teacher == "ATSS":
+    if args.teacher == "mmdetection":
         system("chmod 777 ./mmdetection.sh")
         run("./mmdetection.sh", check=True)
 
