@@ -6,3 +6,9 @@ teachers/CenterNet/results/
 *.pkl
 **/**/*.pkl
 *.pth
+
+teachers/mmdetection
+teachers/model_zoo
+teachers/mmdetection/*
+*.ipynb
+.ipynb_checkpoints
