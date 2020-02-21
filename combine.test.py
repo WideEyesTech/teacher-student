@@ -80,7 +80,6 @@ class Test(unittest.TestCase):
 
         self.assertTrue(np.all(result == expected_result))
     
-
     def test_no_overlaps(self):
         '''
         Test with no overlaps between A and B

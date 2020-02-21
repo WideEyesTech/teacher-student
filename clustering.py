@@ -5,6 +5,7 @@ import json
 import random
 import time
 from random import shuffle
+import tqdm
 
 import cv2
 import numpy as np
@@ -94,7 +95,7 @@ CLASSES_BASIC = [
 ]
 
 
-def print_results(results, model, image, color):
+def print_results(results, model, image):
     fig, ax = plt.subplots(figsize=(12, 12))
     fig = ax.imshow(image, aspect='equal')
     plt.axis('off')
@@ -109,10 +110,20 @@ def print_results(results, model, image, color):
         xmax = bbox[2]
         ymax = bbox[3]
 
-        ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, fill=False, edgecolor=color,
-                                   linewidth=4.0))
-        ax.text(xmin+1, ymin-3, '{:s}'.format(model+"_"+CLASSES_BASIC[int(result[4:].argmax())]), bbox=dict(facecolor=color, ec='black', lw=2, alpha=0.5),
-                fontsize=15, color='white', weight='bold')
+        score = result[4:].max()
+        if float("{0:.1f}".format(score)) < 0:
+            score_color = 0
+        else: 
+            score_color = (1-(float("{0:.1f}".format(score)))**3, .6, .0, 1.0)
+
+        label = CLASSES_BASIC[int(np.array(result[4:]).argmax())]
+
+        ax.set_title(model)
+
+        ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
+                                   fill=False, edgecolor=score_color, linewidth=4.0))
+        ax.text(xmin+1, ymin-3, '{:s}'.format("{}_{}".format(label, score)), bbox=dict(
+            facecolor=score_color, ec='black', lw=2, alpha=0.5), fontsize=15, color='white', weight='bold')
 
     plt.show()
     plt.close()
@@ -129,7 +140,7 @@ def merge_bboxes(bboxA, bboxB, method="mean"):
 
 
 # bboxes -> [x1, y1, x2, y2, score1, score2, ..., scoreN, category]
-def combine(bboxesA, bboxesB, thr=0.7):
+def combine(bboxesA, bboxesB, thr=.5):
     ious = cytools.bbox_overlaps(bboxesA[:, :4], bboxesB[:, :4])
     # [
     #   [0.4, 0.0, 0.05, 0.1, 0.9],
@@ -150,7 +161,7 @@ def combine(bboxesA, bboxesB, thr=0.7):
 
     no_oks = oks == False
     # [False, False, True]
-    
+
     bboxesC = np.vstack((bboxesC, bboxesA[no_oks, :]))
 
     max_iousB = ious.max(0)  # [0.9, 0.23, 0.2, 0.1, 0.9]
@@ -286,34 +297,31 @@ def convert_bbox(inference):
 def cluster():
 
     # Enable debugging features
-    debug = False
+    debug = True
 
     # Make sure the experiment does not repeat
-    # random.seed(int(time.time()))
-    random.seed(0)
+    random.seed(int(time.time()))
+    # random.seed(0)
 
     # Paths
     data_dir = "/home/toni/datasets/openimages"
-    filenames_paths = [x.strip() for x in open(
-        "/home/toni/datasets/sorted_4_oi_names.txt")]
+    filenames_paths = [x.strip() for x in tqdm.tqdm(open(
+        "/home/toni/datasets/sorted_4_oi_names.txt"), desc="Reading filenames")]
     shuffle(filenames_paths)
-    results_paths = [x.strip()[:-4] + "/results.json" for x in filenames_paths]
+    results_paths = [x.strip()[:-4] + "/results.json" for x in tqdm.tqdm(
+        filenames_paths, desc="Creating reasults paths")]
     inferences_path = "/opt/results/"
 
     teachers = [
         "CenterNet-104_480000",
-        "ATSS"
+        "ATSS",
+        "GCNET"
     ]
 
     # Clustering results
     cluster_result = []
 
     for count, file in enumerate(results_paths):
-        # Get image
-        if debug:
-            image_file = pjoin(data_dir, filenames_paths[count])
-            image = cv2.imread(image_file)[:, :, ::-1]
-
         # Check if all teachets have inferences
         # of the file, otherwise skip loop
         all_teachers_have_inferred = True
@@ -323,15 +331,24 @@ def cluster():
 
             if not pexists(pjoin(teacher_inferences, file)):
                 all_teachers_have_inferred = False
+                break
 
         if not all_teachers_have_inferred:
+            if debug:
+                print("Skipping {}...".format(count))
             continue
+
+        # Get image
+        if debug:
+            print(file)
+            image_file = pjoin(data_dir, filenames_paths[count])
+            image = cv2.imread(image_file)[:, :, ::-1]
 
         # In case all teachers have inferences
         # of the file
 
         # Start clustering
-        for index, teacher in enumerate(teachers):
+        for index, teacher in tqdm.tqdm(enumerate(teachers), desc="Clustering..."):
 
             # Get results path for each teacher
             teacher_inferences = pjoin(inferences_path, teacher)
@@ -342,29 +359,35 @@ def cluster():
             with open(file_inferences) as f_i:
                 inferences = json.load(f_i)
 
+            inferences = np.array(inferences)
+
             # We need to parse Centernet bbox, so we must check
             # if teacher is centernet
             if teacher == "CenterNet-104_480000":
-                inferences = list(map(convert_bbox, inferences))
+                inferences = list(map(convert_bbox, inferences))                
 
             # Transform results data structure from dict to list
             # in order to speed up clustering between inferences
-            inferences = list(map(parse_teacher_results, inferences))
+            inferences = np.array(list(map(parse_teacher_results, inferences)))
 
             if debug:
-                print_results(inferences, teacher, image, "red")
+                print_results(inferences, teacher, image)
 
             # Do not cluster until there are at least two teachers
             if index == 0:
                 cluster_result = inferences
                 continue
-            idxs = np.random.permutation(np.array(inferences).shape[0])
-            cluster_result = combine(
-                np.array(cluster_result), np.array(inferences)[idxs])
+
+            cluster_result = combine(cluster_result, inferences)
+
 
         # Print clustering result
         if debug:
-            print_results(cluster_result, "cluster", image, "green")
+            # Filter cluster results with score treshold
+            score_trh = .7
+            mask = cluster_result[:, 4:].max(1) > score_trh
+            cluster_result = cluster_result[mask, :]
+            print_results(cluster_result, "cluster", image)
 
         yield count
 

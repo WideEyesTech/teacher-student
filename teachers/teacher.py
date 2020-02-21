@@ -68,9 +68,6 @@ if __name__ == '__main__':
 
     dataset = Dataset(args.data_dir, args.filenames_dir, args.results_dir)
 
-    args.config.dataset_type = 'CustomDataset'
-    args.config.data_root = args.data_dir    
-
     # Init model
     model = init_detector(
         args.config, args.checkpoint, device=device)

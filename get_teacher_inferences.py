@@ -7,6 +7,7 @@ This file is only used as a shortcut file, configuration of each teacher
 should be done for each teacher.
 """
 import argparse
+from os import environ
 from os import system
 from subprocess import run
 
@@ -19,6 +20,15 @@ def handleinput(args):
 
     if args.teacher == "mmdetection":
         system("chmod 777 ./mmdetection.sh")
+        
+        # Set env variables in order to speed up process
+        environ["GPU_NUMBER"] = "0"
+        environ["DATA"] = "/home/toni/datasets/openimages"
+        environ["FILENAMES"] = "/home/toni/datasets/sorted_4_oi_names.txt"
+        environ["RESULTS"] = "/opt/results/GCNET"
+        environ["CONFIG"] = "/home/toni/Desktop/teacher-student/teachers/mmdetection/configs/gcnet/mask_rcnn_r4_gcb_c3-c5_r50_fpn_1x.py"
+        environ["CHECKPOINT"] = "/home/toni/Desktop/teacher-student/teachers/model_zoo/mask_rcnn_r4_gcb_c3-c5_r50_fpn_1x_20190602-18ae2dfd.pth"
+
         run("./mmdetection.sh", check=True)
 
 
