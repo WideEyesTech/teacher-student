@@ -11,89 +11,6 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-CLASSES_BASIC = [
-    'person',
-    'bicycle',
-    'car',
-    'motorcycle',
-    'airplane',
-    'bus',
-    'train',
-    'truck',
-    'boat',
-    'traffic light',
-    'fire hydrant',
-    'stop sign',
-    'parking meter',
-    'bench',
-    'bird',
-    'cat',
-    'dog',
-    'horse',
-    'sheep',
-    'cow',
-    'elephant',
-    'bear',
-    'zebra',
-    'giraffe',
-    'backpack',
-    'umbrella',
-    'handbag',
-    'tie',
-    'suitcase',
-    'frisbee',
-    'skis',
-    'snowboard',
-    'sports ball',
-    'kite',
-    'baseball bat',
-    'baseball glove',
-    'skateboard',
-    'surfboard',
-    'tennis racket',
-    'bottle',
-    'wine glass',
-    'cup',
-    'fork',
-    'knife',
-    'spoon',
-    'bowl',
-    'banana',
-    'apple',
-    'sandwich',
-    'orange',
-    'broccoli',
-    'carrot',
-    'hot dog',
-    'pizza',
-    'donut',
-    'cake',
-    'chair',
-    'couch',
-    'potted plant',
-    'bed',
-    'dining table',
-    'toilet',
-    'tv',
-    'laptop',
-    'mouse',
-    'remote',
-    'keyboard',
-    'cell phone',
-    'microwave',
-    'oven',
-    'toaster',
-    'sink',
-    'refrigerator',
-    'book',
-    'clock',
-    'vase',
-    'scissors',
-    'teddy bear',
-    'hair drier',
-    'toothbrush'
-]
-
 
 def print_results(results, model, image):
     fig, ax = plt.subplots(figsize=(12, 12))
@@ -102,16 +19,99 @@ def print_results(results, model, image):
     fig.axes.get_xaxis().set_visible(False)
     fig.axes.get_yaxis().set_visible(False)
 
+    CLASSES_BASIC = [
+        'person',
+        'bicycle',
+        'car',
+        'motorcycle',
+        'airplane',
+        'bus',
+        'train',
+        'truck',
+        'boat',
+        'traffic light',
+        'fire hydrant',
+        'stop sign',
+        'parking meter',
+        'bench',
+        'bird',
+        'cat',
+        'dog',
+        'horse',
+        'sheep',
+        'cow',
+        'elephant',
+        'bear',
+        'zebra',
+        'giraffe',
+        'backpack',
+        'umbrella',
+        'handbag',
+        'tie',
+        'suitcase',
+        'frisbee',
+        'skis',
+        'snowboard',
+        'sports ball',
+        'kite',
+        'baseball bat',
+        'baseball glove',
+        'skateboard',
+        'surfboard',
+        'tennis racket',
+        'bottle',
+        'wine glass',
+        'cup',
+        'fork',
+        'knife',
+        'spoon',
+        'bowl',
+        'banana',
+        'apple',
+        'sandwich',
+        'orange',
+        'broccoli',
+        'carrot',
+        'hot dog',
+        'pizza',
+        'donut',
+        'cake',
+        'chair',
+        'couch',
+        'potted plant',
+        'bed',
+        'dining table',
+        'toilet',
+        'tv',
+        'laptop',
+        'mouse',
+        'remote',
+        'keyboard',
+        'cell phone',
+        'microwave',
+        'oven',
+        'toaster',
+        'sink',
+        'refrigerator',
+        'book',
+        'clock',
+        'vase',
+        'scissors',
+        'teddy bear',
+        'hair drier',
+        'toothbrush'
+    ]
+
     for result in results:
-        
+
         bbox = result[:4]
         score = result[4:-1].max()
         label = CLASSES_BASIC[int(np.array(result[4:-1]).argmax())]
 
-        print("Teacher: ", model)
-        print("Score: ", score)
-        print("Category: ", label)
-        print("Number of teacher inferences: ", result[-1])
+        # print("Teacher: ", model)
+        # print("Score: ", score)
+        # print("Category: ", label)
+        # print("Number of teacher inferences: ", result[-1])
 
         xmin = bbox[0]
         ymin = bbox[1]
@@ -124,9 +124,9 @@ def print_results(results, model, image):
 
         if float("{0:.1f}".format(score)) < 0:
             score_color = 0
-        else: 
-            score_color = (1-(float("{0:.1f}".format(score)))**3, .6, .0, opacity)
-
+        else:
+            score_color = (
+                1-(float("{0:.1f}".format(score)))**3, .6, .0, opacity)
 
         ax.set_title(model)
 
@@ -288,7 +288,7 @@ def parse_teacher_results(inference):
     score_and_n_of_teachers[category_position] = inference["score"]
 
     # Return new data structure
-    return inference["bbox"] + score_and_n_of_teachers 
+    return inference["bbox"] + score_and_n_of_teachers
 
 
 # Convert bbox from: xmin, ymin, width, height -- to --> xmin, ymin, xmax, ymax
@@ -307,6 +307,18 @@ def convert_bbox(inference):
         "score": inference["score"]
     }
 
+# Convert list type results into coco format
+
+
+def convert_to_coco(result):
+    return {
+        "category_id": (result[4:-1].argmax()),
+        "bbox": [result[0], result[2]-result[0], result[1], result[3]-result[1]],
+    }
+
+def save_result(path, result):
+    with open(path, "w") as f:
+        json.dump(result, f)
 
 def cluster():
 
@@ -325,6 +337,7 @@ def cluster():
     results_paths = [x.strip()[:-4] + "/results.json" for x in tqdm.tqdm(
         filenames_paths, desc="Creating reasults paths")]
     inferences_path = "/opt/results/"
+    results_path = "/opt/results/cluster"
 
     teachers = [
         "CenterNet-104_480000",
@@ -362,7 +375,7 @@ def cluster():
         # of the file
 
         # Start clustering
-        for index, teacher in tqdm.tqdm(enumerate(teachers), desc="Clustering..."):
+        for index, teacher in enumerate(teachers):
 
             # Get results path for each teacher
             teacher_inferences = pjoin(inferences_path, teacher)
@@ -378,7 +391,7 @@ def cluster():
             # We need to parse Centernet bbox, so we must check
             # if teacher is centernet
             if teacher == "CenterNet-104_480000":
-                inferences = list(map(convert_bbox, inferences))                
+                inferences = list(map(convert_bbox, inferences))
 
             # Transform results data structure from dict to list
             # in order to speed up clustering between inferences
@@ -394,10 +407,12 @@ def cluster():
 
             cluster_result = combine(cluster_result, inferences)
 
-
         # Print clustering result
         if debug:
             print_results(cluster_result, "cluster", image)
+
+        cluster_result = list(map(convert_to_coco, cluster_result))
+        # save_result(results_path, cluster_result)
 
         yield count
 
