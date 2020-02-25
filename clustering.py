@@ -103,20 +103,30 @@ def print_results(results, model, image):
     fig.axes.get_yaxis().set_visible(False)
 
     for result in results:
+        
         bbox = result[:4]
+        score = result[4:-1].max()
+        label = CLASSES_BASIC[int(np.array(result[4:-1]).argmax())]
+
+        print("Teacher: ", model)
+        print("Score: ", score)
+        print("Category: ", label)
+        print("Number of teacher inferences: ", result[-1])
 
         xmin = bbox[0]
         ymin = bbox[1]
         xmax = bbox[2]
         ymax = bbox[3]
 
-        score = result[4:].max()
+        opacity = 1
+        if model == "cluster":
+            opacity = (1-(1/result[-1]))+.2
+
         if float("{0:.1f}".format(score)) < 0:
             score_color = 0
         else: 
-            score_color = (1-(float("{0:.1f}".format(score)))**3, .6, .0, 1.0)
+            score_color = (1-(float("{0:.1f}".format(score)))**3, .6, .0, opacity)
 
-        label = CLASSES_BASIC[int(np.array(result[4:]).argmax())]
 
         ax.set_title(model)
 
@@ -157,7 +167,9 @@ def combine(bboxesA, bboxesB, thr=.5):
     # [4, 0, 0]
 
     if oks.size:
-        bboxesC = (bboxesA[oks, :] + bboxesB[rels[oks], :]) / 2
+        bboxesC = np.zeros(bboxesA[oks, :].shape)
+        bboxesC[:, :] = (bboxesA[oks, :] + bboxesB[rels[oks], :]) / 2
+        bboxesC[:, -1] *= 2
 
     no_oks = oks == False
     # [False, False, True]
@@ -269,12 +281,14 @@ def parse_teacher_results(inference):
     # Transform score to a len(classes) 0 valued list
     # with the score value in the category position of the list
     # [0, 0, 0 ,0 , 0.8, ... 0]
-    score = [0]*len(classes)
+    score_and_n_of_teachers = [0]*(len(classes)+1)
+    # Minimum one techer have inference
+    score_and_n_of_teachers[-1] = 1.0
     category_position = classes[category]
-    score[category_position] = inference["score"]
+    score_and_n_of_teachers[category_position] = inference["score"]
 
     # Return new data structure
-    return inference["bbox"] + score
+    return inference["bbox"] + score_and_n_of_teachers 
 
 
 # Convert bbox from: xmin, ymin, width, height -- to --> xmin, ymin, xmax, ymax
@@ -383,10 +397,6 @@ def cluster():
 
         # Print clustering result
         if debug:
-            # Filter cluster results with score treshold
-            score_trh = .7
-            mask = cluster_result[:, 4:].max(1) > score_trh
-            cluster_result = cluster_result[mask, :]
             print_results(cluster_result, "cluster", image)
 
         yield count
