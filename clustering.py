@@ -120,7 +120,7 @@ def print_results(results, model, image):
 
         opacity = 1
         if model == "cluster":
-            opacity = (1-(1/result[-1]))+.2
+            opacity = (1-(1/result[-1]))**2
 
         if float("{0:.1f}".format(score)) < 0:
             score_color = 0
@@ -168,8 +168,8 @@ def combine(bboxesA, bboxesB, thr=.5):
 
     if oks.size:
         bboxesC = np.zeros(bboxesA[oks, :].shape)
-        bboxesC[:, :] = (bboxesA[oks, :] + bboxesB[rels[oks], :]) / 2
-        bboxesC[:, -1] *= 2
+        bboxesC[:, :-1] = (bboxesA[oks, :-1] + bboxesB[rels[oks], :-1]) / 2
+        bboxesC[:, -1] = (bboxesA[oks, -1] + bboxesB[rels[oks], -1])
 
     no_oks = oks == False
     # [False, False, True]
