@@ -334,10 +334,10 @@ def cluster():
     filenames_paths = [x.strip() for x in tqdm.tqdm(open(
         "/home/toni/datasets/sorted_4_oi_names.txt"), desc="Reading filenames")]
     shuffle(filenames_paths)
-    results_paths = [x.strip()[:-4] + "/results.json" for x in tqdm.tqdm(
+    inferences_jsons = [x.strip()[:-4] + "/results.json" for x in tqdm.tqdm(
         filenames_paths, desc="Creating reasults paths")]
-    inferences_path = "/opt/results/"
-    results_path = "/opt/results/cluster"
+    inferences_path = "/home/toni/datasets/results"
+    results_path = "/home/toni/datasets/results/cluster"
 
     teachers = [
         "CenterNet-104_480000",
@@ -348,7 +348,7 @@ def cluster():
     # Clustering results
     cluster_result = []
 
-    for count, file in enumerate(results_paths):
+    for count, file in enumerate(inferences_jsons):
         # Check if all teachets have inferences
         # of the file, otherwise skip loop
         all_teachers_have_inferred = True
