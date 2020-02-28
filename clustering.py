@@ -1,6 +1,9 @@
 import cytools
+
+import uuid
 from os.path import join as pjoin
 from os.path import exists as pexists
+from os.path import split as psplit
 import json
 import random
 import time
@@ -11,6 +14,89 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Enum like dict wih indices for each classname
+classes = {
+    "person": 1,
+    "bicycle": 2,
+    "car": 3,
+    "motorcycle": 4,
+    "airplane": 5,
+    "bus": 6,
+    "train": 7,
+    "truck": 8,
+    "boat": 9,
+    "trafficlight": 10,
+    "firehydrant": 11,
+    "stopsign": 13,
+    "parkingmeter": 14,
+    "bench": 15,
+    "bird": 16,
+    "cat": 17,
+    "dog": 18,
+    "horse": 19,
+    "sheep": 20,
+    "cow": 21,
+    "elephant": 22,
+    "bear": 23,
+    "zebra": 24,
+    "giraffe": 25,
+    "backpack": 27,
+    "umbrella": 28,
+    "handbag": 31,
+    "tie": 32,
+    "suitcase": 33,
+    "frisbee": 34,
+    "skis": 35,
+    "snowboard": 36,
+    "sportsball": 37,
+    "kite": 38,
+    "baseballbat": 39,
+    "baseballglove": 40,
+    "skateboard": 41,
+    "surfboard": 42,
+    "tennisracket": 43,
+    "bottle": 44,
+    "wineglass": 46,
+    "cup": 47,
+    "fork": 48,
+    "knife": 49,
+    "spoon": 50,
+    "bowl": 51,
+    "banana": 52,
+    "apple": 53,
+    "sandwich": 54,
+    "orange": 55,
+    "broccoli": 56,
+    "carrot": 57,
+    "hotdog": 58,
+    "pizza": 59,
+    "donut": 60,
+    "cake": 61,
+    "chair": 62,
+    "couch": 63,
+    "pottedplant": 64,
+    "bed": 65,
+    "diningtable": 67,
+    "toilet": 70,
+    "tv": 72,
+    "laptop": 73,
+    "mouse": 74,
+    "remote": 75,
+    "keyboard": 76,
+    "cellphone": 77,
+    "microwave": 78,
+    "oven": 79,
+    "toaster": 80,
+    "sink": 81,
+    "refrigerator": 82,
+    "book": 84,
+    "clock": 85,
+    "vase": 86,
+    "scissors": 87,
+    "teddybear": 88,
+    "hairdrier": 89,
+    "toothbrush": 90,
+}
 
 def print_results(results, model, image):
     fig, ax = plt.subplots(figsize=(12, 12))
@@ -19,94 +105,14 @@ def print_results(results, model, image):
     fig.axes.get_xaxis().set_visible(False)
     fig.axes.get_yaxis().set_visible(False)
 
-    CLASSES_BASIC = [
-        'person',
-        'bicycle',
-        'car',
-        'motorcycle',
-        'airplane',
-        'bus',
-        'train',
-        'truck',
-        'boat',
-        'traffic light',
-        'fire hydrant',
-        'stop sign',
-        'parking meter',
-        'bench',
-        'bird',
-        'cat',
-        'dog',
-        'horse',
-        'sheep',
-        'cow',
-        'elephant',
-        'bear',
-        'zebra',
-        'giraffe',
-        'backpack',
-        'umbrella',
-        'handbag',
-        'tie',
-        'suitcase',
-        'frisbee',
-        'skis',
-        'snowboard',
-        'sports ball',
-        'kite',
-        'baseball bat',
-        'baseball glove',
-        'skateboard',
-        'surfboard',
-        'tennis racket',
-        'bottle',
-        'wine glass',
-        'cup',
-        'fork',
-        'knife',
-        'spoon',
-        'bowl',
-        'banana',
-        'apple',
-        'sandwich',
-        'orange',
-        'broccoli',
-        'carrot',
-        'hot dog',
-        'pizza',
-        'donut',
-        'cake',
-        'chair',
-        'couch',
-        'potted plant',
-        'bed',
-        'dining table',
-        'toilet',
-        'tv',
-        'laptop',
-        'mouse',
-        'remote',
-        'keyboard',
-        'cell phone',
-        'microwave',
-        'oven',
-        'toaster',
-        'sink',
-        'refrigerator',
-        'book',
-        'clock',
-        'vase',
-        'scissors',
-        'teddy bear',
-        'hair drier',
-        'toothbrush'
-    ]
-
     for result in results:
 
         bbox = result[:4]
         score = result[4:-1].max()
-        label = CLASSES_BASIC[int(np.array(result[4:-1]).argmax())]
+
+        # Get label
+        label = list(classes.keys())[list(classes.values()).index(
+            int(np.array(result[4:-1]).argmax()))]
 
         # print("Teacher: ", model)
         # print("Score: ", score)
@@ -191,99 +197,16 @@ def combine(bboxesA, bboxesB, thr=.5):
 
 
 def parse_teacher_results(inference):
-    # Enum like dict wih indices for each classname
-    classes = {
-        'airplane': 4,
-        'apple': 47,
-        'backpack': 24,
-        'banana': 46,
-        'baseballbat': 34,
-        'baseballglove': 35,
-        'bear': 21,
-        'bed': 59,
-        'bench': 13,
-        'bicycle': 1,
-        'bird': 14,
-        'boat': 8,
-        'book': 73,
-        'bottle': 39,
-        'bowl': 45,
-        'broccoli': 50,
-        'bus': 5,
-        'cake': 55,
-        'car': 2,
-        'carrot': 51,
-        'cat': 15,
-        'cellphone': 67,
-        'chair': 56,
-        'clock': 74,
-        'couch': 57,
-        'cow': 19,
-        'cup': 41,
-        'diningtable': 60,
-        'dog': 16,
-        'donut': 54,
-        'elephant': 20,
-        'firehydrant': 10,
-        'fork': 42,
-        'frisbee': 29,
-        'giraffe': 23,
-        'hair_drier': 78,
-        'handbag': 26,
-        'horse': 17,
-        'hotdog': 52,
-        'keyboard': 66,
-        'kite': 33,
-        'knife': 43,
-        'laptop': 63,
-        'microwave': 68,
-        'motorcycle': 3,
-        'mouse': 64,
-        'orange': 49,
-        'oven': 69,
-        'parkingmeter': 12,
-        'person': 0,
-        'pizza': 53,
-        'pottedplant': 58,
-        'refrigerator': 72,
-        'remote': 65,
-        'sandwich': 48,
-        'scissors': 76,
-        'sheep': 18,
-        'sink': 71,
-        'skateboard': 36,
-        'skis': 30,
-        'snowboard': 31,
-        'spoon': 44,
-        'sportsball': 32,
-        'stopsign': 11,
-        'suitcase': 28,
-        'surfboard': 37,
-        'teddybear': 77,
-        'tennisracket': 38,
-        'tie': 27,
-        'toaster': 70,
-        'toilet': 61,
-        'toothbrush': 79,
-        'trafficlight': 9,
-        'train': 6,
-        'truck': 7,
-        'tv': 62,
-        'umbrella': 25,
-        'vase': 75,
-        'wineglass': 40,
-        'zebra': 22
-    }
-
     # Parse category name to make data more consistent removing underscores and spaces
     category = inference["category_id"].replace("_", "").replace(" ", "")
 
     # Transform score to a len(classes) 0 valued list
     # with the score value in the category position of the list
     # [0, 0, 0 ,0 , 0.8, ... 0]
-    score_and_n_of_teachers = [0]*(len(classes)+1)
+    score_and_n_of_teachers = [0]*(90+1)
     # Minimum one techer have inference
     score_and_n_of_teachers[-1] = 1.0
+
     category_position = classes[category]
     score_and_n_of_teachers[category_position] = inference["score"]
 
@@ -307,18 +230,53 @@ def convert_bbox(inference):
         "score": inference["score"]
     }
 
-# Convert list type results into coco format
+
+def save_result(input_path, output_path, annotations):
+    # Save result to a "COCO like" dataset
+    # function to add to JSON
+    def write_json(data, filename=output_path):
+        with open(filename, 'w') as f:
+            json.dump(data, f)
+
+    # Get image HxW
+    img = cv2.imread(input_path)
+    dimensions = img.shape
+
+    # Extract filename
+    _, filename = psplit(input_path)
+
+    # Get an ID
+    f_id = str(uuid.uuid4())
+    a_id = str(uuid.uuid4())
 
 
-def convert_to_coco(result):
-    return {
-        "category_id": (result[4:-1].argmax()),
-        "bbox": [result[0], result[2]-result[0], result[1], result[3]-result[1]],
+    image_data = {
+        "width": dimensions[1],
+        "height": dimensions[0],
+        "filename": filename,
+        "flickr_url": "http://{}".format(input_path),
+        "id": f_id
     }
 
-def save_result(path, result):
-    with open(path, "w") as f:
-        json.dump(result, f)
+    with open(output_path) as json_file:
+        data = json.load(json_file)
+
+        # Add image info
+        data["images"].append(image_data)
+
+        # Add annotation
+        for annotation in annotations:
+            data["annotations"].append({
+                "iscrowd": 0,
+                "image_id": f_id,
+                "bbox": annotation[:4].tolist(),
+                "category_id": int(annotation[4:-1].argmax()),
+                "id": a_id,
+                "score": int(annotation[4:-1].max())
+            })
+
+    write_json(data)
+
 
 def cluster():
 
@@ -411,8 +369,8 @@ def cluster():
         if debug:
             print_results(cluster_result, "cluster", image)
 
-        cluster_result = list(map(convert_to_coco, cluster_result))
-        # save_result(results_path, cluster_result)
+        save_result(pjoin(
+            data_dir, filenames_paths[count]), "./FCOCO_dataset.json", cluster_result)
 
         yield count
 

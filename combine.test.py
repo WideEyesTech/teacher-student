@@ -124,11 +124,8 @@ class Test(unittest.TestCase):
 
             result = combine(bboxesA, bboxesB)
             
-            try:
-                self.assertTrue(np.all(result == expected_result))
-            except:
-                import pdb; pdb.set_trace()
-
+            self.assertTrue(np.all(result == expected_result))
+          
             return result
 
         result = make_assert(bboxesA, bboxesB)

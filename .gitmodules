@@ -1,3 +1,3 @@
-[submodule "student/ASFF"]
-	path = student/ASFF
-	url = https://github.com/ruinmessi/ASFF
+[submodule "ASFF"]
+	path = ASFF
+	url = https://github.com/ruinmessi/ASFF.git
