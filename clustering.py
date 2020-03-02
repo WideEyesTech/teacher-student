@@ -1,6 +1,5 @@
 import cytools
 
-import uuid
 from os.path import join as pjoin
 from os.path import exists as pexists
 from os.path import split as psplit
@@ -231,7 +230,7 @@ def convert_bbox(inference):
     }
 
 
-def save_result(input_path, output_path, annotations):
+def save_result(input_path, output_path, annotations, file):
     # Save result to a "COCO like" dataset
     # function to add to JSON
     def write_json(data, filename=output_path):
@@ -246,16 +245,18 @@ def save_result(input_path, output_path, annotations):
     _, filename = psplit(input_path)
 
     # Get an ID
-    f_id = str(uuid.uuid4())
-    a_id = str(uuid.uuid4())
+    f_id = int(str(time.time()).replace(".", ""))
+    a_id = int(str(time.time()).replace(".", ""))
 
+    ref, _ = psplit(file) 
 
     image_data = {
         "width": dimensions[1],
         "height": dimensions[0],
         "filename": filename,
-        "flickr_url": "http://{}".format(input_path),
-        "id": f_id
+        "flickr_url": "http:/{}".format(input_path),
+        "id": f_id,
+        "ref": ref
     }
 
     with open(output_path) as json_file:
@@ -281,7 +282,7 @@ def save_result(input_path, output_path, annotations):
 def cluster():
 
     # Enable debugging features
-    debug = True
+    debug = False
 
     # Make sure the experiment does not repeat
     random.seed(int(time.time()))
@@ -369,8 +370,19 @@ def cluster():
         if debug:
             print_results(cluster_result, "cluster", image)
 
+        # Split between train test and validation
+        save_as_type = "train"
+        r = random.random()
+
+        if r < .8:
+            save_as_type = "train"
+        elif .8 < r < .9:
+            save_as_type = "val"
+        else:
+            save_as_type = "test"
+
         save_result(pjoin(
-            data_dir, filenames_paths[count]), "./FCOCO_dataset.json", cluster_result)
+            data_dir, filenames_paths[count]), "/home/toni/datasets/annotations/instances_{}2017.json".format(save_as_type), cluster_result, file)
 
         yield count
 
