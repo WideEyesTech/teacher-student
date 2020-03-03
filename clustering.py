@@ -254,7 +254,7 @@ def save_result(input_path, output_path, annotations, file):
         "width": dimensions[1],
         "height": dimensions[0],
         "filename": filename,
-        "flickr_url": "http:/{}".format(input_path),
+        "flickr_url": "http://{}".format(ref),
         "id": f_id,
         "ref": ref
     }
@@ -307,7 +307,7 @@ def cluster():
     # Clustering results
     cluster_result = []
 
-    for count, file in enumerate(inferences_jsons):
+    for count, file in tqdm.tqdm(enumerate(inferences_jsons)):
         # Check if all teachets have inferences
         # of the file, otherwise skip loop
         all_teachers_have_inferred = True

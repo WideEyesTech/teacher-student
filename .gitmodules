@@ -1,3 +1,6 @@
 [submodule "ASFF"]
 	path = ASFF
 	url = https://github.com/ruinmessi/ASFF.git
+[submodule "RFBNet"]
+	path = RFBNet
+	url = https://github.com/ruinmessi/RFBNet.git
