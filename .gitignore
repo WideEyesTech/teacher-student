@@ -7,8 +7,6 @@ models/CenterNet/results/
 **/**/*.pkl
 *.pth
 
-models/mmdetection
 models/model_zoo
-models/mmdetection/*
 *.ipynb
 .ipynb_checkpoints
