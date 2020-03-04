@@ -192,6 +192,8 @@ def combine(bboxesA, bboxesB, thr=.5):
     bboxesC = np.vstack((bboxesC, bboxesB[no_oksB, :]))
 
     # [x1, y1, x2, y2, score1, score2, ..., scoreN, category]
+    test = [x[4:-1].argmax() for x in bboxesC]
+
     return bboxesC
 
 
@@ -202,7 +204,7 @@ def parse_teacher_results(inference):
     # Transform score to a len(classes) 0 valued list
     # with the score value in the category position of the list
     # [0, 0, 0 ,0 , 0.8, ... 0]
-    score_and_n_of_teachers = [0]*(90+1)
+    score_and_n_of_teachers = [0]*(91+1) # 91 for 90 posible classes index and 1 for the number of teachers inferences
     # Minimum one techer have inference
     score_and_n_of_teachers[-1] = 1.0
 
@@ -241,9 +243,6 @@ def save_result(input_path, output_path, annotations, file):
     img = cv2.imread(input_path)
     dimensions = img.shape
 
-    # Extract filename
-    _, filename = psplit(input_path)
-
     # Get an ID
     f_id = int(str(time.time()).replace(".", ""))
     a_id = int(str(time.time()).replace(".", ""))
@@ -253,10 +252,9 @@ def save_result(input_path, output_path, annotations, file):
     image_data = {
         "width": dimensions[1],
         "height": dimensions[0],
-        "filename": filename,
-        "flickr_url": "http://{}".format(ref),
-        "id": f_id,
-        "ref": ref
+        "file_name": "{}.jpg".format(ref),
+        "flickr_url": "http://{}.jpg".format(ref),
+        "id": f_id
     }
 
     with open(output_path) as json_file:
@@ -308,6 +306,11 @@ def cluster():
     cluster_result = []
 
     for count, file in tqdm.tqdm(enumerate(inferences_jsons)):
+
+        if count == 20000:
+            break
+
+
         # Check if all teachets have inferences
         # of the file, otherwise skip loop
         all_teachers_have_inferred = True
@@ -374,15 +377,15 @@ def cluster():
         save_as_type = "train"
         r = random.random()
 
-        if r < .8:
+        if r < .7:
             save_as_type = "train"
-        elif .8 < r < .9:
+        elif .7 < r < .9:
             save_as_type = "val"
         else:
             save_as_type = "test"
 
         save_result(pjoin(
-            data_dir, filenames_paths[count]), "/home/toni/datasets/annotations/instances_{}2017.json".format(save_as_type), cluster_result, file)
+            data_dir, filenames_paths[count]), "/home/toni/datasets/openimages/annotations/instances_{}2017.json".format(save_as_type), cluster_result, file)
 
         yield count
 

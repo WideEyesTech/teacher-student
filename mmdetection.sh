@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Tested config: NVCC 9.0, NVIDIA DRIVERS 440.33.01, GCC 5.5, CUDA 9.0"
 
-if [ ! -d ./teachers/mmdetection ]; then
+if [ ! -d ./models/mmdetection ]; then
     read -p "Are you using conda? y/n " is_using_conda
     if ( [[ "$is_using_conda" != "y" ]] && [[ "$is_using_conda" != "n" ]] ); then
         echo  "Incorrect answer"
@@ -14,20 +14,20 @@ if [ ! -d ./teachers/mmdetection ]; then
         
         conda install -c pytorch pytorch torchvision -y
         conda install cython -y
-        git clone https://github.com/open-mmlab/mmdetection.git ./teachers/mmdetection
-        cd ./teachers/mmdetection
+        git clone https://github.com/open-mmlab/mmdetection.git ./models/mmdetection
+        cd ./models/mmdetection
         python3 -m pip install -r requirements/build.txt --user
         python3 -m pip install -v -e . --user
         cd ../../
     else
-        git clone https://github.com/open-mmlab/mmdetection.git ./teachers/mmdetection
-        cd ./teachers/mmdetection
+        git clone https://github.com/open-mmlab/mmdetection.git ./models/mmdetection
+        cd ./models/mmdetection
         python3 -m pip install -r requirements/build.txt --user
         python3 -m pip install -v -e . --user
         cd ../../
     fi
     
-    cp ./teachers/teacher.py ./teachers/mmdetection/teacher.py
+    cp ./models/teacher.py ./models/mmdetection/teacher.py
     
     echo "Choose a teacher: ATSS, GCNET"
     read teacher
@@ -36,16 +36,16 @@ if [ ! -d ./teachers/mmdetection ]; then
         exit
     fi
     
-    if [ ! -d ./teachers/model_zoo ]; then
-        mkdir ./teachers/model_zoo
+    if [ ! -d ./models/model_zoo ]; then
+        mkdir ./models/model_zoo
         if [[ "$teacher" == "ATSS" ]]; then
-            export CONFIG="./teachers/mmdetection/configs/atss/atss_r50_fpn_1x.py"
+            export CONFIG="./models/mmdetection/configs/atss/atss_r50_fpn_1x.py"
             export CHECKPOINT="atss_r50_fpn_1x_20200113-a7aa251e.pth"
-            wget "https://open-mmlab.s3.ap-northeast-2.amazonaws.com/mmdetection/models/atss/atss_r50_fpn_1x_20200113-a7aa251e.pth" -P ./teachers/model_zoo
+            wget "https://open-mmlab.s3.ap-northeast-2.amazonaws.com/mmdetection/models/atss/atss_r50_fpn_1x_20200113-a7aa251e.pth" -P ./models/model_zoo
             elif [[ "$teacher" == "GCNET" ]]; then
-            export CONFIG="./teachers/mmdetection/configs/gcnet/mask_rcnn_r16_gcb_c3-c5_r50_fpn_1x.py"
+            export CONFIG="./models/mmdetection/configs/gcnet/mask_rcnn_r16_gcb_c3-c5_r50_fpn_1x.py"
             export CHECKPOINT="mask_rcnn_r4_gcb_c3-c5_r50_fpn_1x_20190602-18ae2dfd.pth"
-            wget "https://open-mmlab.s3.ap-northeast-2.amazonaws.com/mmdetection/models/gcnet/mask_rcnn_r4_gcb_c3-c5_r50_fpn_1x_20190602-18ae2dfd.pth" -P ./teachers/model_zoo
+            wget "https://open-mmlab.s3.ap-northeast-2.amazonaws.com/mmdetection/models/gcnet/mask_rcnn_r4_gcb_c3-c5_r50_fpn_1x_20190602-18ae2dfd.pth" -P ./models/model_zoo
         fi
     fi
 fi
@@ -87,4 +87,4 @@ if [ ! $CHECKPOINT ]; then
     export CHECKPOINT=$checkpoint
 fi
 
-CUDA_VISIBLE_DEVICES=$GPU_NUMBER nice -n1 python3 ./teachers/mmdetection/teacher.py $DATA $FILENAMES $RESULTS $CONFIG $CHECKPOINT
+CUDA_VISIBLE_DEVICES=$GPU_NUMBER nice -n1 python3 ./models/mmdetection/teacher.py $DATA $FILENAMES $RESULTS $CONFIG $CHECKPOINT

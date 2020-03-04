@@ -91,6 +91,7 @@ class Test(unittest.TestCase):
         # Also test with aditional teacher with same inferences
         result2 = make_assert(result, result)
 
+
     def test_all_a_overlaps_but_b(self):
         '''
         Test with all bboxesA overlapping (with IoU greater than Threshold) bboxesB, but with some 

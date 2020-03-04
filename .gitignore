@@ -2,13 +2,13 @@ __pycache__
 *.pyc
 experiments/face_keypoints_dataset/train.log
 runs/
-teachers/CenterNet/results/
+models/CenterNet/results/
 *.pkl
 **/**/*.pkl
 *.pth
 
-teachers/mmdetection
-teachers/model_zoo
-teachers/mmdetection/*
+models/mmdetection
+models/model_zoo
+models/mmdetection/*
 *.ipynb
 .ipynb_checkpoints
