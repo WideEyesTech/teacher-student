@@ -69,49 +69,37 @@ def bounded_iou_loss(pred, target, beta=0.2, eps=1e-3):
     return loss
 
 
-@weighted_loss
-def giou_loss(pred, target, eps=1e-7):
+def giou_loss(pred,
+              target,
+              weight,
+              avg_factor=None):
+    """GIoU loss.
+    Computing the GIoU loss between a set of predicted bboxes and target bboxes.
     """
-    Generalized Intersection over Union: A Metric and A Loss for
-    Bounding Box Regression
-    https://arxiv.org/abs/1902.09630
+    pos_mask = weight > 0
+    weight = weight[pos_mask].float()
+    if avg_factor is None:
+        avg_factor = torch.sum(pos_mask).float().item() + 1e-6
+    bboxes1 = pred[pos_mask].view(-1, 4)
+    bboxes2 = target[pos_mask].view(-1, 4)
 
-    code refer to:
-    https://github.com/sfzhang15/ATSS/blob/master/atss_core/modeling/rpn/atss/loss.py#L36
-
-    Args:
-        pred (Tensor): Predicted bboxes of format (x1, y1, x2, y2),
-            shape (n, 4).
-        target (Tensor): Corresponding gt bboxes, shape (n, 4).
-        eps (float): Eps to avoid log(0).
-
-    Return:
-        Tensor: Loss tensor.
-    """
-    # overlap
-    lt = torch.max(pred[:, :2], target[:, :2])
-    rb = torch.min(pred[:, 2:], target[:, 2:])
-    wh = (rb - lt + 1).clamp(min=0)
-    overlap = wh[:, 0] * wh[:, 1]
-
-    # union
-    ap = (pred[:, 2] - pred[:, 0] + 1) * (pred[:, 3] - pred[:, 1] + 1)
-    ag = (target[:, 2] - target[:, 0] + 1) * (target[:, 3] - target[:, 1] + 1)
-    union = ap + ag - overlap + eps
-
-    # IoU
-    ious = overlap / union
-
-    # enclose area
-    enclose_x1y1 = torch.min(pred[:, :2], target[:, :2])
-    enclose_x2y2 = torch.max(pred[:, 2:], target[:, 2:])
+    lt = torch.max(bboxes1[:, :2], bboxes2[:, :2])  # [rows, 2]
+    rb = torch.min(bboxes1[:, 2:], bboxes2[:, 2:])  # [rows, 2]
+    wh = (rb - lt + 1).clamp(min=0)  # [rows, 2]
+    enclose_x1y1 = torch.min(bboxes1[:, :2], bboxes2[:, :2])
+    enclose_x2y2 = torch.max(bboxes1[:, 2:], bboxes2[:, 2:])
     enclose_wh = (enclose_x2y2 - enclose_x1y1 + 1).clamp(min=0)
-    enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1] + eps
 
-    # GIoU
-    gious = ious - (enclose_area - union) / enclose_area
-    loss = 1 - gious
-    return loss
+    overlap = wh[:, 0] * wh[:, 1]
+    ap = (bboxes1[:, 2] - bboxes1[:, 0] + 1) * (bboxes1[:, 3] - bboxes1[:, 1] + 1)
+    ag = (bboxes2[:, 2] - bboxes2[:, 0] + 1) * (bboxes2[:, 3] - bboxes2[:, 1] + 1)
+    ious = overlap / (ap + ag - overlap)
+
+    enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1]  # i.e. C in paper
+    u = ap + ag - overlap
+    gious = ious - (enclose_area - u) / enclose_area
+    iou_distances = 1 - gious
+    return torch.sum(iou_distances * weight)[None] / avg_factor
 
 
 @LOSSES.register_module

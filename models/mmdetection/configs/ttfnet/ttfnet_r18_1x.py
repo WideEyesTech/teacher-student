@@ -1,7 +1,7 @@
 # model settings
 model = dict(
     type='TTFNet',
-    pretrained='modelzoo://resnet18',
+    pretrained='torchvision://resnet18',
     backbone=dict(
         type='ResNet',
         depth=18,
@@ -107,6 +107,6 @@ device_ids = range(8)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = './work_dirs/ttfnet18_1x'
-load_from = None
+load_from = "../../model_zoo/ttfnet_r18_1x.py"
 resume_from = None
 workflow = [('train', 1)]

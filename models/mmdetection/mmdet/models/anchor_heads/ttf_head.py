@@ -7,7 +7,7 @@ import numpy as np
 from mmdet.ops import ModulatedDeformConvPack
 from mmdet.core import multi_apply, bbox_areas, force_fp32
 from mmdet.core.anchor.guided_anchor_target import calc_region
-from mmdet.models.losses import ct_focal_loss, GIoULoss
+from mmdet.models.losses import ct_focal_loss, giou_loss
 from mmdet.models.utils import (build_norm_layer, bias_init_with_prob, ConvModule)
 from mmdet.ops.nms import simple_nms
 from .anchor_head import AnchorHead
