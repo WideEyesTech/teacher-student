@@ -10,3 +10,4 @@ models/CenterNet/results/
 models/model_zoo
 *.ipynb
 .ipynb_checkpoints
+mmdetection/**/*
