@@ -244,7 +244,6 @@ def save_result(input_path, output_path, annotations, file):
     dimensions = img.shape
 
     # Get an ID
-    f_id = int(str(time.time()).replace(".", ""))
     a_id = int(str(time.time()).replace(".", ""))
 
     ref, _ = psplit(file) 
@@ -254,7 +253,7 @@ def save_result(input_path, output_path, annotations, file):
         "height": dimensions[0],
         "file_name": "{}.jpg".format(ref),
         "flickr_url": "http://{}.jpg".format(ref),
-        "id": f_id
+        "id": ref
     }
 
     with open(output_path) as json_file:
@@ -267,7 +266,7 @@ def save_result(input_path, output_path, annotations, file):
         for annotation in annotations:
             data["annotations"].append({
                 "iscrowd": 0,
-                "image_id": f_id,
+                "image_id": ref,
                 "bbox": annotation[:4].tolist(),
                 "category_id": int(annotation[4:-1].argmax()),
                 "id": a_id,
@@ -294,7 +293,7 @@ def cluster():
     inferences_jsons = [x.strip()[:-4] + "/results.json" for x in tqdm.tqdm(
         filenames_paths, desc="Creating reasults paths")]
     inferences_path = "/home/toni/datasets/results"
-    results_path = "/home/toni/datasets/results/cluster"
+    results_path = "/home/toni/datasets/openimages/annotations"
 
     teachers = [
         "CenterNet-104_480000",
@@ -305,11 +304,9 @@ def cluster():
     # Clustering results
     cluster_result = []
 
-    for count, file in tqdm.tqdm(enumerate(inferences_jsons)):
+    for count in tqdm.tqdm(range(0, len(inferences_jsons)), ncols=80, desc="Clustering...") :
 
-        if count == 20000:
-            break
-
+        file = inferences_jsons[count]
 
         # Check if all teachets have inferences
         # of the file, otherwise skip loop
@@ -385,7 +382,7 @@ def cluster():
             save_as_type = "test"
 
         save_result(pjoin(
-            data_dir, filenames_paths[count]), "/home/toni/datasets/openimages/annotations/instances_{}2017.json".format(save_as_type), cluster_result, file)
+            data_dir, filenames_paths[count]), "{}/instances_{}2017.json".format(results_path, save_as_type), cluster_result, file)
 
         yield count
 
@@ -395,7 +392,7 @@ if __name__ == "__main__":
     # next(cluster())
     # return
 
-    NUMBER_OF_EXAMPLES = 1000
+    NUMBER_OF_EXAMPLES = 40000000
 
     for i, x in enumerate(cluster()):
         if i == NUMBER_OF_EXAMPLES:
