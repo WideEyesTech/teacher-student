@@ -5,11 +5,13 @@ from os.path import exists as pexists
 from os.path import split as psplit
 import json
 import random
+import csv
 import time
 from random import shuffle
 import tqdm
 
 import cv2
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -96,6 +98,7 @@ classes = {
     "hairdrier": 89,
     "toothbrush": 90,
 }
+
 
 def print_results(results, model, image):
     fig, ax = plt.subplots(figsize=(12, 12))
@@ -204,7 +207,8 @@ def parse_teacher_results(inference):
     # Transform score to a len(classes) 0 valued list
     # with the score value in the category position of the list
     # [0, 0, 0 ,0 , 0.8, ... 0]
-    score_and_n_of_teachers = [0]*(91+1) # 91 for 90 posible classes index and 1 for the number of teachers inferences
+    # 91 for 90 posible classes index and 1 for the number of teachers inferences
+    score_and_n_of_teachers = [0]*(91+1)
     # Minimum one techer have inference
     score_and_n_of_teachers[-1] = 1.0
 
@@ -232,13 +236,7 @@ def convert_bbox(inference):
     }
 
 
-def save_result(input_path, output_path, annotations, file):
-    # Save result to a "COCO like" dataset
-    # function to add to JSON
-    def write_json(data, filename=output_path):
-        with open(filename, 'w') as f:
-            json.dump(data, f)
-
+def save_result(input_path, output_path, annotations, file, first_time=False):
     # Get image HxW
     img = cv2.imread(input_path)
     dimensions = img.shape
@@ -246,34 +244,27 @@ def save_result(input_path, output_path, annotations, file):
     # Get an ID
     a_id = int(str(time.time()).replace(".", ""))
 
-    ref, _ = psplit(file) 
+    ref, _ = psplit(file)
 
-    image_data = {
-        "width": dimensions[1],
-        "height": dimensions[0],
-        "file_name": "{}.jpg".format(ref),
-        "flickr_url": "http://{}.jpg".format(ref),
-        "id": ref
-    }
+    with open("{}_images.csv".format(output_path), 'w') as f:
+        wr = csv.writer(f)
+        if first_time:
+            wr.writerow(("width", "height", "file_name", "id", "flickr_url"))
 
-    with open(output_path) as json_file:
-        data = json.load(json_file)
+        wr.writerow((dimensions[1], dimensions[0], "{}.jpg".format(
+            ref), "http://{}.jpg".format(ref), ref))
 
-        # Add image info
-        data["images"].append(image_data)
+    with open("{}_ann.csv".format(output_path), 'w') as f:
+        wr = csv.writer(f)
+
+        if first_time:
+            wr.writerow(("iscrowd", "image_id", "bbox",
+                         "category_id", "id", "score"))
 
         # Add annotation
         for annotation in annotations:
-            data["annotations"].append({
-                "iscrowd": 0,
-                "image_id": ref,
-                "bbox": annotation[:4].tolist(),
-                "category_id": int(annotation[4:-1].argmax()),
-                "id": a_id,
-                "score": int(annotation[4:-1].max())
-            })
-
-    write_json(data)
+            wr.writerow((0, ref, annotation[:4].tolist(), int(
+                annotation[4:-1].argmax()), a_id, int(annotation[4:-1].max())))
 
 
 def cluster():
@@ -304,7 +295,10 @@ def cluster():
     # Clustering results
     cluster_result = []
 
-    for count in tqdm.tqdm(range(0, len(inferences_jsons)), ncols=80, desc="Clustering...") :
+    # To create csv columns
+    first_time = True
+
+    for count in tqdm.tqdm(range(0, len(inferences_jsons)), ncols=80, desc="Clustering..."):
 
         file = inferences_jsons[count]
 
@@ -382,7 +376,9 @@ def cluster():
             save_as_type = "test"
 
         save_result(pjoin(
-            data_dir, filenames_paths[count]), "{}/instances_{}2017.json".format(results_path, save_as_type), cluster_result, file)
+            data_dir, filenames_paths[count]), "{}/instances_{}2017".format(results_path, save_as_type), cluster_result, file, first_time)
+
+        first_time = False
 
         yield count
 
