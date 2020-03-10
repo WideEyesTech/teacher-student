@@ -236,7 +236,11 @@ def convert_bbox(inference):
     }
 
 
-def save_result(input_path, output_path, annotations, file, first_time=False):
+def save_result(input_path, output_path, annotations, file):
+    # Paths
+    images_path = "{}_images.csv".format(output_path)
+    ann_paths = "{}_ann.csv".format(output_path)
+
     # Get image HxW
     img = cv2.imread(input_path)
     dimensions = img.shape
@@ -246,20 +250,14 @@ def save_result(input_path, output_path, annotations, file, first_time=False):
 
     ref, _ = psplit(file)
 
-    with open("{}_images.csv".format(output_path), 'w') as f:
+    with open(images_path, 'a') as f:
         wr = csv.writer(f)
-        if first_time:
-            wr.writerow(("width", "height", "file_name", "id", "flickr_url"))
 
         wr.writerow((dimensions[1], dimensions[0], "{}.jpg".format(
             ref), "http://{}.jpg".format(ref), ref))
 
-    with open("{}_ann.csv".format(output_path), 'w') as f:
+    with open(ann_paths, 'a') as f:
         wr = csv.writer(f)
-
-        if first_time:
-            wr.writerow(("iscrowd", "image_id", "bbox",
-                         "category_id", "id", "score"))
 
         # Add annotation
         for annotation in annotations:
@@ -295,14 +293,22 @@ def cluster():
     # Clustering results
     cluster_result = []
 
-    # To create csv columns
-    first_time = True
+    # Create csv columns
+    for x in ["train", "test", "val"]:
+        with open("{}/instances_{}2017_ann.csv".format(results_path, x), 'w') as f:
+            wr = csv.writer(f)
+            wr.writerow(("iscrowd", "image_id", "bbox",
+                         "category_id", "id", "score"))
+
+        with open("{}/instances_{}2017_images.csv".format(results_path, x), 'w') as f:
+            wr = csv.writer(f)
+            wr.writerow(("width", "height", "file_name", "id", "flickr_url"))
 
     for count in tqdm.tqdm(range(0, len(inferences_jsons)), ncols=80, desc="Clustering..."):
 
         file = inferences_jsons[count]
 
-        # Check if all teachets have inferences
+        # Check if all teachers have inferences
         # of the file, otherwise skip loop
         all_teachers_have_inferred = True
         for teacher in teachers:
@@ -327,6 +333,11 @@ def cluster():
         # In case all teachers have inferences
         # of the file
 
+        # Make sure result is
+        # ignored if not all json
+        # files load correct
+        jsonLoadFailed = False
+
         # Start clustering
         for index, teacher in enumerate(teachers):
 
@@ -337,7 +348,12 @@ def cluster():
 
             # Read teacher file inferences
             with open(file_inferences) as f_i:
-                inferences = json.load(f_i)
+                try:
+                    inferences = json.load(f_i)
+                except:
+                    print("failed to load: ", file_inferences)
+                    jsonLoadFailed = True
+                    break
 
             inferences = np.array(inferences)
 
@@ -360,6 +376,10 @@ def cluster():
 
             cluster_result = combine(cluster_result, inferences)
 
+        # If some json have failed to load skip clustering
+        if jsonLoadFailed:
+            continue
+
         # Print clustering result
         if debug:
             print_results(cluster_result, "cluster", image)
@@ -376,9 +396,7 @@ def cluster():
             save_as_type = "test"
 
         save_result(pjoin(
-            data_dir, filenames_paths[count]), "{}/instances_{}2017".format(results_path, save_as_type), cluster_result, file, first_time)
-
-        first_time = False
+            data_dir, filenames_paths[count]), "{}/instances_{}2017".format(results_path, save_as_type), cluster_result, file)
 
         yield count
 

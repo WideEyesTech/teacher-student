@@ -1,7 +1,7 @@
 # model settings
 model = dict(
     type='TTFNet',
-    pretrained='modelzoo://resnet18',
+    pretrained='torchvision://resnet18',
     backbone=dict(
         type='ResNet',
         depth=18,
