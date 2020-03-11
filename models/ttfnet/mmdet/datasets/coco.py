@@ -76,15 +76,20 @@ class CocoDataset(CustomDataset):
             if ann.get('ignore', False):
                 continue
             x1, y1, w, h = ann['bbox']
-            if ann['area'] <= 0 or w < 1 or h < 1:
-                continue
+
+            try:
+                if ann['area'] <= 0 or w < 1 or h < 1:
+                    continue
+            except KeyError:
+                pass
+
             bbox = [x1, y1, x1 + w - 1, y1 + h - 1]
             if ann.get('iscrowd', False):
                 gt_bboxes_ignore.append(bbox)
             else:
                 gt_bboxes.append(bbox)
                 gt_labels.append(self.cat2label[ann['category_id']])
-                gt_masks_ann.append(ann['segmentation'])
+                # gt_masks_ann.append(ann['segmentation'])
 
         if gt_bboxes:
             gt_bboxes = np.array(gt_bboxes, dtype=np.float32)

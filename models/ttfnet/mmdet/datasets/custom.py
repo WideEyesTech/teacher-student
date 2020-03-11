@@ -75,6 +75,7 @@ class CustomDataset(Dataset):
         # set group flag for the sampler
         if not self.test_mode:
             self._set_group_flag()
+            self._set_weak_labels_flags()
         # processing pipeline
         self.pipeline = Compose(pipeline)
 
@@ -104,6 +105,17 @@ class CustomDataset(Dataset):
             if min(img_info['width'], img_info['height']) >= min_size:
                 valid_inds.append(i)
         return valid_inds
+
+    def _set_weak_labels_flags(self):
+        """
+        Super hardcore function to detect weak labels
+        """
+
+        self.weak_labels_flag = np.zeros(len(self), dtype=np.uint8)
+        for i in range(len(self)):
+            img_info = self.img_infos[i]
+            if type(img_info["id"]) == str:
+                self.weak_labels_flag[i] = 1
 
     def _set_group_flag(self):
         """Set flag according to image aspect ratio.
