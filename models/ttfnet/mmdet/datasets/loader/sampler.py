@@ -194,7 +194,7 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         self.num_replicas = num_replicas
         self.rank = rank
         self.epoch = 0
-
+        self.num_samples = 0
         self.flag = self.dataset.flag
 
         # Split between weak labels an no weak labels
@@ -223,7 +223,7 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         else:
             _weak_labels_percent = ((self.epoch*10)/len(self.flag))*100
 
-        self.extended_flag.extend(self.flag[self.weak_labels_indexs][:_weak_labels_percent])
+        np.append(self.extended_flag, self.flag[self.weak_labels_indexs][:_weak_labels_percent])
 
         self.group_sizes = np.bincount(self.extended_flag)
 
