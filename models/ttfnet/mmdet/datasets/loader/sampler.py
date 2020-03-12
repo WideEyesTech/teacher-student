@@ -164,8 +164,7 @@ class DistributedGroupSampler(Sampler):
         self.epoch = epoch
 
 
-
-class DistributedWeightedGroupSampler(Sampler):
+class WeightedWeakLabelsGroupSampler(Sampler):
     """Sampler that restricts data loading to a subset of the dataset.
     It is especially useful in conjunction with
     :class:`torch.nn.parallel.DistributedDataParallel`. In such case, each
@@ -196,26 +195,45 @@ class DistributedWeightedGroupSampler(Sampler):
         self.rank = rank
         self.epoch = 0
 
-        assert hasattr(self.dataset, 'flag')
         self.flag = self.dataset.flag
-        self.group_sizes = np.bincount(self.flag)
+
+        # Split between weak labels an no weak labels
+        self.weak_labels_flags = self.dataset.weak_labels_flag
+
+        self.weak_labels_indexs = np.where(self.weak_labels_flags == 1)[0]
+        self.no_weak_labels_indexs = np.where(self.weak_labels_flags == 0)[0]
+
+        # Set non-mutable base group made from non-weak labels samples
+        self.flag = self.flag[self.no_weak_labels_indexs]
+        # Just initializing
+        self.extended_flag = self.flag
+
+        assert hasattr(self.dataset, 'flag')
+
+        self.calculate_samples_and_total_size()
+
+
+    def calculate_samples_and_total_size(self):
+
+        # Calculate weak labels percent depending on epoch
+        if self.epoch == 0:
+            _weak_labels_percent = 0
+        elif self.epoch >= 10:
+            _weak_labels_percent = len(self.flag)
+        else:
+            _weak_labels_percent = ((self.epoch*10)/len(self.flag))*100
+
+        self.extended_flag.extend(self.flag[self.weak_labels_indexs][:_weak_labels_percent])
+
+        self.group_sizes = np.bincount(self.extended_flag)
 
         self.num_samples = 0
-        for i, j in enumerate(self.group_sizes):
+
+        for i, _ in enumerate(self.group_sizes):
             self.num_samples += int(
                 math.ceil(self.group_sizes[i] * 1.0 / self.samples_per_gpu /
                           self.num_replicas)) * self.samples_per_gpu
         self.total_size = self.num_samples * self.num_replicas
-
-        self.weights = np.zeros(self.total_size)
-        self.weak_labels_flags = self.dataset.weak_labels_flag
-
-        if self.epoch >= 10:
-            self.weights[self.weak_labels_flags] = 10
-            self.weights[self.weights != 10] = 1
-        else:
-            self.weights[self.weak_labels_flags] = self.epoch + 1
-            self.weights[self.weights != self.epoch + 1] = 10 - (self.epoch + 1)
 
     def __iter__(self):
         # deterministically shuffle based on epoch
@@ -225,7 +243,7 @@ class DistributedWeightedGroupSampler(Sampler):
         indices = []
         for i, size in enumerate(self.group_sizes):
             if size > 0:
-                indice = np.where(self.flag == i)[0]
+                indice = np.where(self.extended_flag == i)[0]
                 assert len(indice) == size
                 indice = indice[list(torch.randperm(int(size),
                                                     generator=g))].tolist()
@@ -233,6 +251,7 @@ class DistributedWeightedGroupSampler(Sampler):
                     math.ceil(
                         size * 1.0 / self.samples_per_gpu / self.num_replicas)
                 ) * self.samples_per_gpu * self.num_replicas - len(indice)
+
                 # pad indice
                 tmp = indice.copy()
                 for _ in range(extra // size):
@@ -243,11 +262,11 @@ class DistributedWeightedGroupSampler(Sampler):
         assert len(indices) == self.total_size
 
         indices = [
-            indices[j] for i in list(
-                torch.randperm(
-                    len(indices) // self.samples_per_gpu, generator=g))
-            for j in range(i * self.samples_per_gpu, (i + 1) *
-                           self.samples_per_gpu)
+            indices[j]
+            # For each value in a random permutation of size indices/sample_per_gpu
+            for i in list(torch.randperm(len(indices) // self.samples_per_gpu, generator=g))
+            # Take samples_per_gpu-th values from i
+            for j in range(i * self.samples_per_gpu, (i + 1) * self.samples_per_gpu)
         ]
 
         # subsample
@@ -262,4 +281,4 @@ class DistributedWeightedGroupSampler(Sampler):
 
     def set_epoch(self, epoch):
         self.epoch = epoch
-
+        self.calculate_samples_and_total_size()
