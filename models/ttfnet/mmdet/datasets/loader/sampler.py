@@ -198,13 +198,14 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         assert hasattr(self.dataset, 'flag')
         self.base_flags = self.dataset.flag
 
-        # Split between weak labels an no weak labels
+        # Get indices
         self.weak_labels_flags = self.dataset.weak_labels_flag
-
         self.weak_labels_indexs = np.where(self.weak_labels_flags == 1)[0]
         self.no_weak_labels_indexs = np.where(self.weak_labels_flags == 0)[0]
 
-        self.extended_flag = self.base_flags[self.no_weak_labels_indexs]
+        # Set flags
+        self.no_weak_flags = self.base_flags[self.no_weak_labels_indexs]
+        self.weak_flags = self.base_flags[self.weak_labels_indexs]
 
         self.calculate_samples_and_total_size()
 
@@ -216,8 +217,8 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         _weak_labels_percent = int(
             (epochs_flow[self.epoch]/len(self.weak_labels_indexs))*100)
 
-        self.extended_flag = np.append(self.base_flags,
-                                       self.base_flags[self.weak_labels_indexs][:_weak_labels_percent])
+        self.extended_flag = np.append(self.no_weak_flags,
+                                       self.weak_flags[:_weak_labels_percent])
 
         self.group_sizes = np.bincount(self.extended_flag)
 
