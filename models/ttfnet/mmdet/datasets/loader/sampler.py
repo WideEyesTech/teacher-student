@@ -193,18 +193,14 @@ class CustomSampler(Sampler):
 
     def get_sizes(self):
 
-        epochs_flow = np.array([
-            (100, 0), (95, 5), (90, 10), (85, 15), (80, 20), (75, 25),
-            (70, 30), (65, 35), (60, 40), (55, 45), (50, 50), (50, 50)
-        ])
+        epochs_flow = np.array([(100, 0), (95, 5), (90, 10), (85, 15), (80, 20), (75, 25),(70, 30), (65, 35), (60, 40), (55, 45), (50, 50), (50, 50)])
 
         for i, _ in enumerate(self.group_sizes):
 
             self.group_sizes[i] = (epochs_flow[self.epoch][i]/100)*self.group_sizes[i]
-        
+
             self.num_samples += int(
-                math.ceil(self.group_sizes[i] * 1.0 / self.samples_per_gpu /
-                          self.num_replicas)) * self.samples_per_gpu
+                math.ceil(self.group_sizes[i] * 1.0 / self.samples_per_gpu / self.num_replicas)) * self.samples_per_gpu
         self.total_size = self.num_samples * self.num_replicas
 
     def __iter__(self):
@@ -217,12 +213,10 @@ class CustomSampler(Sampler):
             if size > 0:
                 indice = np.where(self.flag == i)[0]
 
-                indice = indice[:size]
-
-                assert len(indice) == size
-
                 indice = indice[list(torch.randperm(int(size),
                                                     generator=g))].tolist()
+                assert len(indice) == size
+
                 extra = int(
                     math.ceil(
                         size * 1.0 / self.samples_per_gpu / self.num_replicas)
@@ -256,4 +250,5 @@ class CustomSampler(Sampler):
 
     def set_epoch(self, epoch):
         self.epoch = epoch
-        self.get_sizes()
+        if self.epoch != 0:
+            self.get_sizes()
