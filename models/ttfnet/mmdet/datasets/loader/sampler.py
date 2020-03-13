@@ -195,6 +195,7 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         self.rank = rank
         self.epoch = 0
         self.num_samples = 0
+        assert hasattr(self.dataset, 'flag')
         self.base_flags = self.dataset.flag
 
         # Split between weak labels an no weak labels
@@ -205,22 +206,18 @@ class WeightedWeakLabelsGroupSampler(Sampler):
 
         self.extended_flag = self.base_flags[self.no_weak_labels_indexs]
 
-        assert hasattr(self.dataset, 'flag')
-
         self.calculate_samples_and_total_size()
-
 
     def calculate_samples_and_total_size(self):
 
         # Calculate weak labels percent depending on epoch
-        if self.epoch == 0:
-            _weak_labels_percent = 0
-        elif self.epoch >= 10:
-            _weak_labels_percent = len(self.flag)
-        else:
-            _weak_labels_percent = ((self.epoch*10)/len(self.flag))*100
+        epochs_flow = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 50]
 
-        np.append(self.extended_flag, self.base_flags[self.weak_labels_indexs][:_weak_labels_percent])
+        _weak_labels_percent = int(
+            (epochs_flow[self.epoch]/len(self.weak_labels_indexs))*100)
+
+        self.extended_flag = np.append(self.base_flags,
+                                       self.base_flags[self.weak_labels_indexs][:_weak_labels_percent])
 
         self.group_sizes = np.bincount(self.extended_flag)
 
