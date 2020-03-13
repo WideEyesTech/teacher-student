@@ -193,6 +193,7 @@ class CustomSampler(Sampler):
     def get_sizes(self):
 
         self.group_sizes = np.bincount(self.flag)
+        self.num_samples = 0
 
         epochs_flow = np.array([(100, 0), (95, 5), (90, 10), (85, 15), (80, 20), (75, 25),(70, 30), (65, 35), (60, 40), (55, 45), (50, 50), (50, 50)])
 
@@ -230,7 +231,7 @@ class CustomSampler(Sampler):
                 indice.extend(tmp[:extra % size])
                 indices.extend(indice)
 
-        # assert len(indices) == self.total_size
+        assert len(indices) == self.total_size
 
         indices = [
             indices[j] for i in list(
@@ -252,5 +253,4 @@ class CustomSampler(Sampler):
 
     def set_epoch(self, epoch):
         self.epoch = epoch
-        if self.epoch != 0:
-            self.get_sizes()
+        self.get_sizes()
