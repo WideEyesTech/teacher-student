@@ -187,11 +187,12 @@ class CustomSampler(Sampler):
 
         assert hasattr(self.dataset, 'flag')
         self.flag = self.dataset.wflag
-        self.group_sizes = np.bincount(self.flag)
 
         self.get_sizes()
 
     def get_sizes(self):
+
+        self.group_sizes = np.bincount(self.flag)
 
         epochs_flow = np.array([(100, 0), (95, 5), (90, 10), (85, 15), (80, 20), (75, 25),(70, 30), (65, 35), (60, 40), (55, 45), (50, 50), (50, 50)])
 
@@ -221,6 +222,7 @@ class CustomSampler(Sampler):
                     math.ceil(
                         size * 1.0 / self.samples_per_gpu / self.num_replicas)
                 ) * self.samples_per_gpu * self.num_replicas - len(indice)
+                
                 # pad indice
                 tmp = indice.copy()
                 for _ in range(extra // size):
@@ -228,7 +230,7 @@ class CustomSampler(Sampler):
                 indice.extend(tmp[:extra % size])
                 indices.extend(indice)
 
-        assert len(indices) == self.total_size
+        # assert len(indices) == self.total_size
 
         indices = [
             indices[j] for i in list(
