@@ -111,11 +111,11 @@ class CustomDataset(Dataset):
         Super hardcore function to detect weak labels
         """
 
-        self.weak_labels_flag = np.zeros(len(self), dtype=np.uint8)
+        self.wflag = np.zeros(len(self), dtype=np.uint8)
         for i in range(len(self)):
             img_info = self.img_infos[i]
             if type(img_info["id"]) == str:
-                self.weak_labels_flag[i] = 1
+                self.wflag[i] = 1
 
     def _set_group_flag(self):
         """Set flag according to image aspect ratio.

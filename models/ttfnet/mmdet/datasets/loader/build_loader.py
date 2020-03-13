@@ -24,7 +24,7 @@ def build_dataloader(dataset,
     if dist:
         rank, world_size = get_dist_info()
         if shuffle:
-            sampler = WeightedWeakLabelsGroupSampler(dataset, imgs_per_gpu,
+            sampler = DistributedGroupSampler(dataset, imgs_per_gpu,
                                                world_size, rank)
         else:
             sampler = DistributedSampler(

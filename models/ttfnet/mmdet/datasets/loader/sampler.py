@@ -164,19 +164,8 @@ class DistributedGroupSampler(Sampler):
         self.epoch = epoch
 
 
-class WeightedWeakLabelsGroupSampler(Sampler):
-    """Sampler that restricts data loading to a subset of the dataset.
-    It is especially useful in conjunction with
-    :class:`torch.nn.parallel.DistributedDataParallel`. In such case, each
-    process can pass a DistributedSampler instance as a DataLoader sampler,
-    and load a subset of the original dataset that is exclusive to it.
-    .. note::
-        Dataset is assumed to be of constant size.
-    Arguments:
-        dataset: Dataset used for sampling.
-        num_replicas (optional): Number of processes participating in
-            distributed training.
-        rank (optional): Rank of the current process within num_replicas.
+class CustomSampler(Sampler):
+    """
     """
 
     def __init__(self,
@@ -193,29 +182,26 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         self.samples_per_gpu = samples_per_gpu
         self.num_replicas = num_replicas
         self.rank = rank
+        self.num_samples = 0
         self.epoch = 0
-        self.num_samples = 0
+
         assert hasattr(self.dataset, 'flag')
-        self.base_flags = self.dataset.flag
+        self.flag = self.dataset.wflag
+        self.group_sizes = np.bincount(self.flag)
 
-        # Get indices
-        self.weak_labels_flags = self.dataset.weak_labels_flag
-        self.weak_labels_indexs = np.where(self.weak_labels_flags == 1)[0]
-        self.no_weak_labels_indexs = np.where(self.weak_labels_flags == 0)[0]
+        self.get_sizes()
 
-        self.calculate_samples_and_total_size()
+    def get_sizes(self):
 
-    def calculate_samples_and_total_size(self):
-
-        n_of_weak_labels = (self.epoch*5)/(100*len(self.weak_labels_indexs))
-
-        self.selected_flags =  self.base_flags[:int(len(self.no_weak_labels_indexs)+n_of_weak_labels)]
-
-        self.group_sizes = np.bincount(self.selected_flags)
-
-        self.num_samples = 0
+        epochs_flow = np.array([
+            (100, 0), (95, 5), (90, 10), (85, 15), (80, 20), (75, 25),
+            (70, 30), (65, 35), (60, 40), (55, 45), (50, 50), (50, 50)
+        ])
 
         for i, _ in enumerate(self.group_sizes):
+
+            self.group_sizes[i] = (epochs_flow[self.epoch][i]/100)*self.group_sizes[i]
+        
             self.num_samples += int(
                 math.ceil(self.group_sizes[i] * 1.0 / self.samples_per_gpu /
                           self.num_replicas)) * self.samples_per_gpu
@@ -229,15 +215,18 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         indices = []
         for i, size in enumerate(self.group_sizes):
             if size > 0:
-                indice = np.where(self.selected_flags == i)[0]
+                indice = np.where(self.flag == i)[0]
+
+                indice = indice[:size]
+
                 assert len(indice) == size
+
                 indice = indice[list(torch.randperm(int(size),
                                                     generator=g))].tolist()
                 extra = int(
                     math.ceil(
                         size * 1.0 / self.samples_per_gpu / self.num_replicas)
                 ) * self.samples_per_gpu * self.num_replicas - len(indice)
-
                 # pad indice
                 tmp = indice.copy()
                 for _ in range(extra // size):
@@ -248,11 +237,11 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         assert len(indices) == self.total_size
 
         indices = [
-            indices[j]
-            # For each value in a random permutation of size indices/sample_per_gpu
-            for i in list(torch.randperm(len(indices) // self.samples_per_gpu, generator=g))
-            # Take samples_per_gpu-th values from i
-            for j in range(i * self.samples_per_gpu, (i + 1) * self.samples_per_gpu)
+            indices[j] for i in list(
+                torch.randperm(
+                    len(indices) // self.samples_per_gpu, generator=g))
+            for j in range(i * self.samples_per_gpu, (i + 1) *
+                           self.samples_per_gpu)
         ]
 
         # subsample
@@ -267,4 +256,4 @@ class WeightedWeakLabelsGroupSampler(Sampler):
 
     def set_epoch(self, epoch):
         self.epoch = epoch
-        self.calculate_samples_and_total_size()
+        self.get_sizes()
