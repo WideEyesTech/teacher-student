@@ -203,24 +203,15 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         self.weak_labels_indexs = np.where(self.weak_labels_flags == 1)[0]
         self.no_weak_labels_indexs = np.where(self.weak_labels_flags == 0)[0]
 
-        # Set flags
-        self.no_weak_flags = self.base_flags[self.no_weak_labels_indexs]
-        self.weak_flags = self.base_flags[self.weak_labels_indexs]
-
         self.calculate_samples_and_total_size()
 
     def calculate_samples_and_total_size(self):
 
-        # Calculate weak labels percent depending on epoch
-        epochs_flow = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 50]
+        n_of_weak_labels = (self.epoch*5)/(100*len(self.weak_labels_indexs))
 
-        _weak_labels_percent = int(
-            (epochs_flow[self.epoch]/len(self.weak_labels_indexs))*100)
+        self.selected_flags =  self.base_flags[:int(len(self.no_weak_labels_indexs)+n_of_weak_labels)]
 
-        self.extended_flag = np.append(self.no_weak_flags,
-                                       self.weak_flags[:_weak_labels_percent])
-
-        self.group_sizes = np.bincount(self.extended_flag)
+        self.group_sizes = np.bincount(self.selected_flags)
 
         self.num_samples = 0
 
@@ -238,7 +229,7 @@ class WeightedWeakLabelsGroupSampler(Sampler):
         indices = []
         for i, size in enumerate(self.group_sizes):
             if size > 0:
-                indice = np.where(self.extended_flag == i)[0]
+                indice = np.where(self.selected_flags == i)[0]
                 assert len(indice) == size
                 indice = indice[list(torch.randperm(int(size),
                                                     generator=g))].tolist()
