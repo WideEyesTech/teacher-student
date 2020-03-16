@@ -188,69 +188,67 @@ class CustomSampler(Sampler):
         assert hasattr(self.dataset, 'flag')
         self.flag = self.dataset.wflag
 
-        self.get_sizes()
+        # Hardcoded dataset size
+        self.total_size = 10**5
+        
+        self.num_samples = int(
+            math.ceil(self.total_size  / self.samples_per_gpu / self.num_replicas)) * self.samples_per_gpu
 
-    def get_sizes(self):
-
-        self.group_sizes = np.bincount(self.flag)
-        self.num_samples = 0
-
-        epochs_flow = np.array([(100, 0), (95, 5), (90, 10), (85, 15), (80, 20), (75, 25),(70, 30), (65, 35), (60, 40), (55, 45), (50, 50), (50, 50)])
-
-        for i, _ in enumerate(self.group_sizes):
-
-            self.group_sizes[i] = (epochs_flow[self.epoch][i]/100)*self.group_sizes[i]
-
-            self.num_samples += int(
-                math.ceil(self.group_sizes[i] * 1.0 / self.samples_per_gpu / self.num_replicas)) * self.samples_per_gpu
-        self.total_size = self.num_samples * self.num_replicas
+        assert self.num_samples == (self.total_size / self.num_replicas)
 
     def __iter__(self):
         # deterministically shuffle based on epoch
-        g = torch.Generator()
+        g=torch.Generator()
         g.manual_seed(self.epoch)
 
-        indices = []
-        for i, size in enumerate(self.group_sizes):
-            if size > 0:
-                indice = np.where(self.flag == i)[0]
+        coco_labels=np.where(self.flag == 0)[0]
+        # Shuffle based on epoch
+        coco_labels=coco_labels[torch.randperm(len(coco_labels), generator=g)]
+        weak_labels=np.where(self.flag == 1)[0]
+        # Shuffle based on epoch
+        weak_labels=weak_labels[torch.randperm(len(weak_labels), generator=g)]
 
-                indice = indice[list(torch.randperm(int(size),
-                                                    generator=g))].tolist()
-                assert len(indice) == size
+        if self.epoch > 10:
+            dist=(50, 50)
+        else:
+            dist=(100-(5*self.epoch), (5*self.epoch))
 
-                extra = int(
-                    math.ceil(
-                        size * 1.0 / self.samples_per_gpu / self.num_replicas)
-                ) * self.samples_per_gpu * self.num_replicas - len(indice)
-                
-                # pad indice
-                tmp = indice.copy()
-                for _ in range(extra // size):
-                    indice.extend(tmp)
-                indice.extend(tmp[:extra % size])
-                indices.extend(indice)
+        coco_samples_per_batch=int((dist[0]*self.samples_per_gpu)/100)
+        weak_samples_per_batch=int((dist[1]*self.samples_per_gpu)/100)
+        extra=int(self.samples_per_gpu - \
+            (coco_samples_per_batch+weak_samples_per_batch))
 
-        assert len(indices) == self.total_size
+        # Create batches
+        indices=[]
+        for x in range(self.total_size//self.samples_per_gpu):
 
-        indices = [
-            indices[j] for i in list(
-                torch.randperm(
-                    len(indices) // self.samples_per_gpu, generator=g))
-            for j in range(i * self.samples_per_gpu, (i + 1) *
-                           self.samples_per_gpu)
-        ]
+            if len(indices) == self.total_size:
+                return indices
+
+            idx_coco=(x*coco_samples_per_batch)+1
+            if idx_coco >= len(coco_labels):
+                coco_labels=np.concatenate(coco_labels, coco_labels)
+
+            indices.extend(coco_labels[idx_coco:idx_coco+coco_samples_per_batch])
+
+            idx_weak=(x*weak_samples_per_batch)+1
+            if idx_coco >= len(coco_labels):
+                weak_labels=np.concatenate(weak_labels, weak_labels)
+
+            indices.extend(weak_labels[idx_weak:idx_weak+weak_samples_per_batch+extra])
+
 
         # subsample
-        offset = self.num_samples * self.rank
-        indices = indices[offset:offset + self.num_samples]
-        assert len(indices) == self.num_samples
+        offset=self.num_samples * self.rank
+        indices=indices[offset:offset + self.num_samples]
+        
+        # Just to test output
+        indices=list(map(lambda x: "w" if x in weak_labels else "o", indices))
 
-        return iter(indices)
+        return indices
 
     def __len__(self):
         return self.num_samples
 
     def set_epoch(self, epoch):
         self.epoch = epoch
-        self.get_sizes()
