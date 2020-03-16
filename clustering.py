@@ -159,7 +159,7 @@ def merge_bboxes(bboxA, bboxB, method="mean"):
 
 # bboxes -> [x1, y1, x2, y2, score1, score2, ..., scoreN, category]
 def combine(bboxesA, bboxesB, thr=.5):
-    ious = cytools.bbox_overlaps(bboxesA[:, :4], bboxesB[:, :4])
+    ious = cytools.bbox_overlaps(np.array(bboxesA)[:, :4], np.array(bboxesB)[:, :4])
     # [
     #   [0.4, 0.0, 0.05, 0.1, 0.9],
     #   [0.9, 0.23, 0.0, 0.1, 0.1],
