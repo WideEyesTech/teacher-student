@@ -244,7 +244,7 @@ class CustomSampler(Sampler):
         # Just to test output
         indices=list(map(lambda x: "w" if x in weak_labels else "o", indices))
 
-        return indices
+        return iter(indices)
 
     def __len__(self):
         return self.num_samples
