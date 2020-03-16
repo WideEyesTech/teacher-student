@@ -15,7 +15,7 @@ class Test(unittest.TestCase):
         self.total_size = 1000
         self.samples_per_gpu = 16
         self.rank = 1
-        self.num_replicas = 2
+        self.num_replicas = 4
         self.num_samples = int((self.total_size / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
 
         assert self.total_size == self.num_samples * self.num_replicas
@@ -68,11 +68,9 @@ class Test(unittest.TestCase):
         offset=self.num_samples * self.rank
         indices=indices[offset:offset + self.num_samples]
         
-        # assert len(indices) == self.num_samples
-
         # Just to test output
         indices=list(map(lambda x: "w" if x in weak_labels else "o", indices))
-        import pdb; pdb.set_trace()
+
         return indices
 
 

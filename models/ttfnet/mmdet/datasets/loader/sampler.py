@@ -191,10 +191,9 @@ class CustomSampler(Sampler):
         # Hardcoded dataset size
         self.total_size = 10**5
         
-        self.num_samples = int(
-            math.ceil(self.total_size  / self.samples_per_gpu / self.num_replicas)) * self.samples_per_gpu
+        self.num_samples = int((self.total_size / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
 
-        assert self.num_samples == (self.total_size / self.num_replicas)
+        assert self.total_size == self.num_samples * self.num_replicas
 
     def __iter__(self):
         # deterministically shuffle based on epoch
