@@ -241,9 +241,6 @@ class CustomSampler(Sampler):
         offset=self.num_samples * self.rank
         indices=indices[offset:offset + self.num_samples]
         
-        # Just to test output
-        indices=list(map(lambda x: "w" if x in weak_labels else "o", indices))
-
         return iter(indices)
 
     def __len__(self):
