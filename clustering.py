@@ -353,7 +353,7 @@ def cluster():
                 inferences = list(map(convert_bbox, inferences))
 
             # Filter inferences by score
-            if teacher == "CenterNet-104_480000":
+            if teacher == "GCNET":
                 inferences = list(filter(lambda x: x["score"] > 0.6, inferences))
 
             # Transform results data structure from dict to list
