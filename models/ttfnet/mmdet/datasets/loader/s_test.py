@@ -38,7 +38,6 @@ class Test(unittest.TestCase):
             dist=(50, 50)
         else:
             dist=(100-(5*self.epoch), (5*self.epoch))
-
         coco_samples_per_batch=int((dist[0]*self.samples_per_gpu)/100)
         weak_samples_per_batch=int((dist[1]*self.samples_per_gpu)/100)
         extra=int(self.samples_per_gpu - \
@@ -63,6 +62,7 @@ class Test(unittest.TestCase):
 
             indices.extend(weak_labels[idx_weak:idx_weak+weak_samples_per_batch+extra])
 
+        import pdb; pdb.set_trace()
 
         # subsample
         offset=self.num_samples * self.rank
