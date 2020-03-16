@@ -55,7 +55,7 @@ class GroupSampler(Sampler):
             indice = np.where(self.flag == i)[0]
             assert len(indice) == size
             np.random.shuffle(indice)
-            num_extra = int(np.ceil(size /6
+            num_extra = int(np.ceil(size /6))
         indices = indices.astype(np.int64).tolist()
         assert len(indices) == self.num_samples
         return iter(indices)
