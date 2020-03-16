@@ -275,14 +275,14 @@ def cluster():
     # random.seed(0)
 
     # Paths
-    data_dir = "/wideeyes/datasets/openimages"
+    data_dir = "/home/toni/datasets/openimages"
     filenames_paths = [x.strip() for x in tqdm.tqdm(open(
-        "/wideeyes/datasets/sorted_4_oi_names.txt"), desc="Reading filenames")]
+        "/home/toni/datasets/sorted_4_oi_names.txt"), desc="Reading filenames")]
     shuffle(filenames_paths)
     inferences_jsons = [x.strip()[:-4] + "/results.json" for x in tqdm.tqdm(
         filenames_paths, desc="Creating reasults paths")]
-    inferences_path = "/wideeyes/datasets/results"
-    results_path = "/wideeyes/datasets/openimages/annotations"
+    inferences_path = "/home/toni/datasets/results"
+    results_path = "/home/toni/datasets/openimages/annotations"
 
     teachers = [
         "CenterNet-104_480000",
