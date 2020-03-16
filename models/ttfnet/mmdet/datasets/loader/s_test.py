@@ -10,9 +10,9 @@ class Test(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(Test, self).__init__(*args, **kwargs)
-        self.epoch = 12
+        self.epoch = 2
         self.flag = np.random.randint(2, size=215000)
-        self.total_size = 1000
+        self.total_size = 10**5
         self.samples_per_gpu = 16
         self.rank = 1
         self.num_replicas = 4
@@ -68,8 +68,7 @@ class Test(unittest.TestCase):
         offset=self.num_samples * self.rank
         indices=indices[offset:offset + self.num_samples]
         
-        # Just to test output
-        indices=list(map(lambda x: "w" if x in weak_labels else "o", indices))
+        assert len(indices) == self.num_samples
 
         return indices
 

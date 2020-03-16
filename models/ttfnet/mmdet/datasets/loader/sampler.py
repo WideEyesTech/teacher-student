@@ -171,7 +171,7 @@ class CustomSampler(Sampler):
     def __init__(self,
                  dataset,
                  samples_per_gpu=1,
-                 num_replicas=None,
+                 num_replicas=4,
                  rank=None):
         _rank, _num_replicas = get_dist_info()
         if num_replicas is None:
@@ -183,7 +183,7 @@ class CustomSampler(Sampler):
         self.num_replicas = num_replicas
         self.rank = rank
         self.num_samples = 0
-        self.epoch = 0
+        self.epoch = 2
 
         assert hasattr(self.dataset, 'flag')
         self.flag = self.dataset.wflag
@@ -240,6 +240,8 @@ class CustomSampler(Sampler):
         # subsample
         offset=self.num_samples * self.rank
         indices=indices[offset:offset + self.num_samples]
+
+        assert len(indices) == self.num_samples
         
         return iter(indices)
 
