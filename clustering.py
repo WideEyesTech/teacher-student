@@ -275,14 +275,14 @@ def cluster():
     # random.seed(0)
 
     # Paths
-    data_dir = "/home/toni/datasets/openimages"
+    data_dir = "/wideeyes/datasets/openimages"
     filenames_paths = [x.strip() for x in tqdm.tqdm(open(
-        "/home/toni/datasets/sorted_4_oi_names.txt"), desc="Reading filenames")]
+        "/wideeyes/datasets/sorted_4_oi_names.txt"), desc="Reading filenames")]
     shuffle(filenames_paths)
     inferences_jsons = [x.strip()[:-4] + "/results.json" for x in tqdm.tqdm(
         filenames_paths, desc="Creating reasults paths")]
-    inferences_path = "/home/toni/datasets/results"
-    results_path = "/home/toni/datasets/openimages/annotations"
+    inferences_path = "/wideeyes/datasets/results"
+    results_path = "/wideeyes/datasets/openimages/annotations"
 
     teachers = [
         "CenterNet-104_480000",
@@ -293,17 +293,7 @@ def cluster():
     # Clustering results
     cluster_result = []
 
-    # Create csv columns
-    for x in ["train", "test", "val"]:
-        with open("{}/instances_{}2017_ann.csv".format(results_path, x), 'w') as f:
-            wr = csv.writer(f)
-            wr.writerow(("iscrowd", "image_id", "bbox",
-                         "category_id", "id", "score"))
-
-        with open("{}/instances_{}2017_images.csv".format(results_path, x), 'w') as f:
-            wr = csv.writer(f)
-            wr.writerow(("width", "height", "file_name", "id", "flickr_url"))
-
+    # Create csv columnssudo apt install nfs-common
     for count in tqdm.tqdm(range(0, len(inferences_jsons)), ncols=80, desc="Clustering..."):
 
         file = inferences_jsons[count]
@@ -361,6 +351,10 @@ def cluster():
             # if teacher is centernet
             if teacher == "CenterNet-104_480000":
                 inferences = list(map(convert_bbox, inferences))
+
+            # Filter inferences by score
+            if teacher == "CenterNet-104_480000":
+                inferences = list(filter(lambda x: x["score"] > 0.6, inferences))
 
             # Transform results data structure from dict to list
             # in order to speed up clustering between inferences
