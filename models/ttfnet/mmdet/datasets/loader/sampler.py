@@ -55,7 +55,7 @@ class GroupSampler(Sampler):
             indice = np.where(self.flag == i)[0]
             assert len(indice) == size
             np.random.shuffle(indice)
-            num_extra = int(np.ceil(size /6))
+            num_extra = int(np.ceil(size / 6))
         indices = indices.astype(np.int64).tolist()
         assert len(indices) == self.num_samples
         return iter(indices)
@@ -178,60 +178,70 @@ class CustomSampler(Sampler):
 
         # Hardcoded dataset size
         self.total_size = 10**5
-        
-        self.num_samples = int((self.total_size / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
+
+        self.num_samples = int(
+            (self.total_size / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
 
         assert self.total_size == self.num_samples * self.num_replicas
 
     def __iter__(self):
         # deterministically shuffle based on epoch
-        g=torch.Generator()
+        g = torch.Generator()
         g.manual_seed(self.epoch)
 
-        coco_labels=np.where(self.flag == 0)[0]
+        coco_labels = np.where(self.flag == 0)[0]
         # Shuffle based on epoch
-        coco_labels=coco_labels[torch.randperm(len(coco_labels), generator=g)]
+        coco_labels = coco_labels[torch.randperm(
+            len(coco_labels), generator=g)]
 
-        weak_labels=np.where(self.flag == 1)[0]
+        weak_labels = np.where(self.flag == 1)[0]
         # Shuffle based on epoch
-        weak_labels=weak_labels[torch.randperm(len(weak_labels), generator=g)]
+        weak_labels = weak_labels[torch.randperm(
+            len(weak_labels), generator=g)]
 
         if self.epoch > 10:
-            dist=(50, 50)
+            dist = (50, 50)
         else:
-            dist=(100-(5*self.epoch), (5*self.epoch))
+            dist = (100-(5*self.epoch), (5*self.epoch))
 
-        coco_samples_per_batch=int((dist[0]*self.samples_per_gpu)/100)
-        weak_samples_per_batch=int((dist[1]*self.samples_per_gpu)/100)
-        extra=int(self.samples_per_gpu - \
-            (coco_samples_per_batch+weak_samples_per_batch))
+        coco_samples_per_batch = int((dist[0]*self.samples_per_gpu)/100)
+        weak_samples_per_batch = int((dist[1]*self.samples_per_gpu)/100)
+        extra = int(self.samples_per_gpu -
+                    (coco_samples_per_batch+weak_samples_per_batch))
 
-        assert coco_samples_per_batch + weak_samples_per_batch + extra == self.samples_per_gpu
+        assert coco_samples_per_batch + \
+            weak_samples_per_batch + extra == self.samples_per_gpu
 
         # Create batches
-        indices=[]
+        indices = []
         for x in range(self.total_size//self.samples_per_gpu):
+            batch = list([])
 
-            idx_coco=(x*coco_samples_per_batch)+(1&x)
+            idx_coco = (x*coco_samples_per_batch)+(1 & x)
+
             if idx_coco >= len(coco_labels):
-                coco_labels=np.concatenate(coco_labels, coco_labels)
+                coco_labels = np.concatenate(coco_labels, coco_labels)
 
-            indices.extend(coco_labels[idx_coco:idx_coco+coco_samples_per_batch])
+            batch.extend(
+                coco_labels[idx_coco:idx_coco+coco_samples_per_batch])
 
-            idx_weak=(x*weak_samples_per_batch)+(1&x)
+            idx_weak = (x*weak_samples_per_batch)+(1 & x)
             if idx_weak >= len(weak_labels):
-                weak_labels=np.concatenate(weak_labels, weak_labels)
+                weak_labels = np.concatenate(weak_labels, weak_labels)
 
-            indices.extend(weak_labels[idx_weak:idx_weak+weak_samples_per_batch+extra])
-        
+            batch.extend(
+                weak_labels[idx_weak:idx_weak+weak_samples_per_batch])
+
+            indices.extend(batch)
+
         assert len(indices) == self.total_size
 
         # subsample
-        offset=self.num_samples * self.rank
-        indices=indices[offset:offset + self.num_samples]
+        offset = self.num_samples * self.rank
+        indices = indices[offset:offset + self.num_samples]
 
         assert len(indices) == self.num_samples
-        
+
         return iter(indices)
 
     def __len__(self):

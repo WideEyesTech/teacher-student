@@ -3,7 +3,6 @@ import numpy as np
 import torch
 import math
 
-
 class Test(unittest.TestCase):
     '''
     '''
@@ -43,24 +42,28 @@ class Test(unittest.TestCase):
         extra=int(self.samples_per_gpu - \
             (coco_samples_per_batch+weak_samples_per_batch))
 
+        weak_samples_per_batch+=extra
+
         # Create batches
         indices=[]
         for x in range(self.total_size//self.samples_per_gpu):
+
+            batch = list([])
 
             idx_coco=(x*coco_samples_per_batch)+(1&x)
 
             if idx_coco >= len(coco_labels):
                 coco_labels=np.concatenate(coco_labels, coco_labels)
 
-            indices.extend(coco_labels[idx_coco:idx_coco+coco_samples_per_batch])
+            batch.extend(coco_labels[idx_coco:idx_coco+coco_samples_per_batch])
 
             idx_weak=(x*weak_samples_per_batch)+(1&x)
             if idx_weak >= len(weak_labels):
                 weak_labels=np.concatenate(weak_labels, weak_labels)
 
-            indices.extend(weak_labels[idx_weak:idx_weak+weak_samples_per_batch+extra])
+            batch.extend(weak_labels[idx_weak:idx_weak+weak_samples_per_batch])
 
-            print('Indices: ', self.total_size)
+            indices.extend(batch)
         
         assert len(indices) == self.total_size
 
