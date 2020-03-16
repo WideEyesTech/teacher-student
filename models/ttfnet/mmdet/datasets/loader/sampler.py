@@ -55,18 +55,7 @@ class GroupSampler(Sampler):
             indice = np.where(self.flag == i)[0]
             assert len(indice) == size
             np.random.shuffle(indice)
-            num_extra = int(np.ceil(size / self.samples_per_gpu)
-                            ) * self.samples_per_gpu - len(indice)
-            indice = np.concatenate(
-                [indice, np.random.choice(indice, num_extra)])
-            indices.append(indice)
-        indices = np.concatenate(indices)
-        indices = [
-            indices[i * self.samples_per_gpu:(i + 1) * self.samples_per_gpu]
-            for i in np.random.permutation(
-                range(len(indices) // self.samples_per_gpu))
-        ]
-        indices = np.concatenate(indices)
+            num_extra = int(np.ceil(size /6
         indices = indices.astype(np.int64).tolist()
         assert len(indices) == self.num_samples
         return iter(indices)
@@ -171,7 +160,7 @@ class CustomSampler(Sampler):
     def __init__(self,
                  dataset,
                  samples_per_gpu=1,
-                 num_replicas=4,
+                 num_replicas=None,
                  rank=None):
         _rank, _num_replicas = get_dist_info()
         if num_replicas is None:
@@ -183,7 +172,7 @@ class CustomSampler(Sampler):
         self.num_replicas = num_replicas
         self.rank = rank
         self.num_samples = 0
-        self.epoch = 2
+        self.epoch = 0
 
         assert hasattr(self.dataset, 'flag')
         self.flag = self.dataset.wflag
