@@ -354,7 +354,7 @@ def cluster():
 
             # Filter inferences by score
             if teacher == "GCNET":
-                inferences = list(filter(lambda x: x["score"] > 0.6, inferences))
+                inferences = np.array(list(filter(lambda x: x["score"] > 0.6, inferences)))
 
             # Transform results data structure from dict to list
             # in order to speed up clustering between inferences
