@@ -47,22 +47,22 @@ class Test(unittest.TestCase):
         indices=[]
         for x in range(self.total_size//self.samples_per_gpu):
 
-            if len(indices) == self.total_size:
-                return indices
+            idx_coco=(x*coco_samples_per_batch)+(1&x)
 
-            idx_coco=(x*coco_samples_per_batch)+1
             if idx_coco >= len(coco_labels):
                 coco_labels=np.concatenate(coco_labels, coco_labels)
 
             indices.extend(coco_labels[idx_coco:idx_coco+coco_samples_per_batch])
 
-            idx_weak=(x*weak_samples_per_batch)+1
-            if idx_coco >= len(coco_labels):
+            idx_weak=(x*weak_samples_per_batch)+(1&x)
+            if idx_weak >= len(weak_labels):
                 weak_labels=np.concatenate(weak_labels, weak_labels)
 
             indices.extend(weak_labels[idx_weak:idx_weak+weak_samples_per_batch+extra])
 
-        import pdb; pdb.set_trace()
+            print('Indices: ', self.total_size)
+        
+        assert len(indices) == self.total_size
 
         # subsample
         offset=self.num_samples * self.rank

@@ -171,7 +171,6 @@ class CustomSampler(Sampler):
         self.samples_per_gpu = samples_per_gpu
         self.num_replicas = num_replicas
         self.rank = rank
-        self.num_samples = 0
         self.epoch = 0
 
         assert hasattr(self.dataset, 'flag')
@@ -206,6 +205,8 @@ class CustomSampler(Sampler):
         weak_samples_per_batch=int((dist[1]*self.samples_per_gpu)/100)
         extra=int(self.samples_per_gpu - \
             (coco_samples_per_batch+weak_samples_per_batch))
+
+        assert coco_samples_per_batch + weak_samples_per_batch + extra == self.samples_per_gpu
 
         # Create batches
         indices=[]
