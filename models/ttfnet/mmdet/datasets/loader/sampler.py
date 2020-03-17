@@ -222,14 +222,14 @@ class CustomSampler(Sampler):
             
             idx_coco = (count*coco_samples_per_batch)
 
-            if idx_coco >= len(coco_labels):
+            if idx_coco+coco_samples_per_batch >= len(coco_labels):
                 coco_labels = np.concatenate(coco_labels, coco_labels)
 
             batch.extend(
                 coco_labels[idx_coco:idx_coco+coco_samples_per_batch])
 
             idx_weak = (count*weak_samples_per_batch)
-            if idx_weak >= len(weak_labels):
+            if idx_weak+weak_samples_per_batch >= len(weak_labels):
                 weak_labels = np.concatenate(weak_labels, weak_labels)
 
             batch.extend(
