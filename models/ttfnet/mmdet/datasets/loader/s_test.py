@@ -26,7 +26,7 @@ class Test(unittest.TestCase):
         # deterministically shuffle based on epoch
         g = torch.Generator()
         g.manual_seed(self.epoch)
-        import pdb; pdb.set_trace()
+
         coco_labels = np.where(self.flag == 0)[0]
         # Shuffle based on epoch
         coco_labels = coco_labels[torch.randperm(
