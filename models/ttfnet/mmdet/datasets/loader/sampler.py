@@ -191,13 +191,13 @@ class CustomSampler(Sampler):
 
         coco_labels = np.where(self.flag == 0)[0]
         # Shuffle based on epoch
-        coco_labels = coco_labels[torch.randperm(
-            len(coco_labels), generator=g)]
+        coco_labels = np.array(coco_labels[torch.randperm(
+            len(coco_labels), generator=g)])
 
         weak_labels = np.where(self.flag == 1)[0]
         # Shuffle based on epoch
-        weak_labels = weak_labels[torch.randperm(
-            len(weak_labels), generator=g)]
+        weak_labels = np.array(weak_labels[torch.randperm(
+            len(weak_labels), generator=g)])
 
         if self.epoch > 10:
             dist = (50, 50)
