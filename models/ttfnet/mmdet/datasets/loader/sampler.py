@@ -214,7 +214,7 @@ class CustomSampler(Sampler):
 
         # Create batches
         indices = []
-        for x in range(self.total_size//self.samples_per_gpu):
+        while len(indices) != self.total_size:
             batch = list([])
 
             idx_coco = (x*coco_samples_per_batch)+(1 & x)
@@ -232,7 +232,10 @@ class CustomSampler(Sampler):
             batch.extend(
                 weak_labels[idx_weak:idx_weak+weak_samples_per_batch])
 
+            assert len(batch) == self.samples_per_gpu
+
             indices.extend(batch)
+            print(x)
 
         assert len(indices) == self.total_size
 
