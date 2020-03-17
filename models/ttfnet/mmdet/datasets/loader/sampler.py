@@ -209,8 +209,10 @@ class CustomSampler(Sampler):
         extra = int(self.samples_per_gpu -
                     (coco_samples_per_batch+weak_samples_per_batch))
 
+        weak_samples_per_batch+=extra
+
         assert coco_samples_per_batch + \
-            weak_samples_per_batch + extra == self.samples_per_gpu
+            weak_samples_per_batch  == self.samples_per_gpu
 
         # Create batches
         indices = []
