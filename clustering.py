@@ -354,6 +354,7 @@ def cluster():
 
             # Filter inferences by score
             if teacher == "GCNET":
+                import pdb; pdb.set_trace()
                 inferences = np.array(list(filter(lambda x: x["score"] > 0.6, inferences)))
                 if len(inferences) == 0:
                     continue

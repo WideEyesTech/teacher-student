@@ -209,10 +209,10 @@ class CustomSampler(Sampler):
         extra = int(self.samples_per_gpu -
                     (coco_samples_per_batch+weak_samples_per_batch))
 
-        weak_samples_per_batch+=extra
+        weak_samples_per_batch += extra
 
         assert coco_samples_per_batch + \
-            weak_samples_per_batch  == self.samples_per_gpu
+            weak_samples_per_batch == self.samples_per_gpu
 
         # Create batches
         indices = []
@@ -220,18 +220,21 @@ class CustomSampler(Sampler):
         count_weak = 0
         while len(indices) != self.total_size:
             batch = []
-            
+
             idx_coco = (count_coco*coco_samples_per_batch)
 
             if idx_coco+coco_samples_per_batch >= len(coco_labels):
                 count_coco = 0
+                idx_coco = (count_coco*coco_samples_per_batch)
 
             batch.extend(
                 coco_labels[idx_coco:idx_coco+coco_samples_per_batch])
 
             idx_weak = (count_weak*weak_samples_per_batch)
+
             if idx_weak+weak_samples_per_batch >= len(weak_labels):
                 count_weak = 0
+                idx_weak = (count_weak*weak_samples_per_batch)
 
             batch.extend(
                 weak_labels[idx_weak:idx_weak+weak_samples_per_batch])
@@ -244,9 +247,10 @@ class CustomSampler(Sampler):
 
         assert len(indices) == self.total_size
 
-        # subsample
-        offset = self.num_samples * self.rank
-        indices = indices[offset:offset + self.num_samples]
+        # Subsamples
+        if not self.num_samples == self.total_size:
+            offset = self.num_samples * self.rank
+            indices = indices[offset:offset + self.num_samples]
 
         assert len(indices) == self.num_samples
 
