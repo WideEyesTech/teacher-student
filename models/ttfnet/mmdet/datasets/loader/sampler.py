@@ -268,8 +268,6 @@ class CustomSampler(Sampler):
             coco_count += coco_samples_per_batch
             weak_count += weak_samples_per_batch
 
-        assert len(indices) == int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu
-
         # Subsamples
         if not self.num_replicas == 1:
             offset = self.num_samples * self.rank
