@@ -11,7 +11,7 @@ class Test(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(Test, self).__init__(*args, **kwargs)
-        self.epoch = 19
+        self.epoch = 0
         self.flag = [0]*110000
         self.flag = self.flag + [1]*10**6
         self.flag = np.array(self.flag)
@@ -49,10 +49,11 @@ class Test(unittest.TestCase):
             except IndexError:
                 dist = 100
 
-        current_weak_label_group = 0 if self.epoch < 10 else self.epoch-10
+        current_weak_label_group = 0 if self.epoch < 11 else self.epoch-10
 
-        n_of_weak_labels = int(dist/100*len(self.coco_labels)) if self.epoch < 11 else 10**5
+        n_of_weak_labels = int(dist/100*len(self.coco_labels)) if self.epoch < 11 else len(self.weak_labels_groups[current_weak_label_group])
         n_of_coco_labels = len(self.coco_labels) if self.epoch < 11 else 0
+
 
         weak_labels = self.weak_labels_groups[current_weak_label_group][:n_of_weak_labels]
         coco_labels = [] if n_of_coco_labels == 0 else self.coco_labels
@@ -85,13 +86,10 @@ class Test(unittest.TestCase):
             import pdb
             pdb.set_trace()
 
-        assert len(coco_labels) + \
-            len(weak_labels) == int(self.total_size/self.samples_per_gpu) * \
-            self.samples_per_gpu
 
         coco_count = 0
         weak_count = 0
-        count = 0
+
         indices = []
         while len(indices) != int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu:
             batch = [
@@ -108,7 +106,6 @@ class Test(unittest.TestCase):
 
             indices.extend(batch)
 
-            count += 1
             coco_count += coco_samples_per_batch
             weak_count += weak_samples_per_batch
 
