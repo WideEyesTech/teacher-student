@@ -12,12 +12,12 @@ class Test(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(Test, self).__init__(*args, **kwargs)
         self.epoch = 0
-        self.flag = [0]*110000
+        self.flag = [0]*117000
         self.flag = self.flag + [1]*10**6
         self.flag = np.array(self.flag)
         self.samples_per_gpu = 16
         self.rank = 1
-        self.num_replicas = 4
+        self.num_replicas = 1
 
         self.coco_labels = np.where(self.flag == 0)[0]
         self.weak_labels = np.where(self.flag == 1)[0]
@@ -97,9 +97,7 @@ class Test(unittest.TestCase):
                 *list(weak_labels[weak_count:weak_count+weak_samples_per_batch])
             ]
 
-            try:
-                assert len(batch) == self.samples_per_gpu
-            except AssertionError:
+            if len(batch) != self.samples_per_gpu:
                 indices.extend(coco_labels[coco_count:])
                 indices.extend(weak_labels[weak_count:])
                 break
@@ -109,7 +107,7 @@ class Test(unittest.TestCase):
             coco_count += coco_samples_per_batch
             weak_count += weak_samples_per_batch
 
-        assert len(indices) == self.total_size
+        assert len(indices) == int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu
 
         # Subsamples
         if not self.num_replicas == 1:
