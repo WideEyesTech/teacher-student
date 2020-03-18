@@ -59,9 +59,9 @@ class Test(unittest.TestCase):
         coco_labels = [] if n_of_coco_labels == 0 else self.coco_labels
 
         num_coco_samples = int(
-            (n_of_coco_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
+            int(n_of_coco_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
         num_weak_samples = int(
-            (n_of_weak_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
+            int(n_of_weak_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
 
         self.num_samples = num_coco_samples + num_weak_samples
 

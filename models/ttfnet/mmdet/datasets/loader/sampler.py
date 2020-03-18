@@ -218,9 +218,9 @@ class CustomSampler(Sampler):
         coco_labels = [] if n_of_coco_labels == 0 else self.coco_labels
 
         num_coco_samples = int(
-            (n_of_coco_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
+            int(n_of_coco_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
         num_weak_samples = int(
-            (n_of_weak_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
+            int(n_of_weak_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
 
         self.num_samples = num_coco_samples + num_weak_samples
 
@@ -268,7 +268,7 @@ class CustomSampler(Sampler):
             coco_count += coco_samples_per_batch
             weak_count += weak_samples_per_batch
 
-        assert len(indices) == self.total_size
+        assert len(indices) == int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu
 
         # Subsamples
         if not self.num_replicas == 1:
