@@ -11,7 +11,7 @@ class Test(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(Test, self).__init__(*args, **kwargs)
-        self.epoch = 2
+        self.epoch = 19
         self.flag = [0]*110000
         self.flag = self.flag + [1]*10**6
         self.flag = np.array(self.flag)
@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
         self.epochs = list(range(0, 110, 10))
 
         print("Number of epochs must be less than: ",
-              len(self.weak_labels_groups)+len(self.epochs))
+              len(self.weak_labels_groups)+len(self.epochs)-1)
 
     def test_custom_sampler(self):
 
@@ -41,15 +41,24 @@ class Test(unittest.TestCase):
         self.coco_labels = self.coco_labels[torch.randperm(
             len(self.coco_labels), generator=g)]
 
-        try:
-            dist = self.epochs[self.epoch]
-        except IndexError:
-            dist = 100
+        if self.epoch == 0:
+            dist = self.epochs[0]
+        else:
+            try:
+                dist = self.epochs[self.epoch-1]
+            except IndexError:
+                dist = 100
 
-        n_of_weak_labels = int(dist/100*len(self.coco_labels))
+        current_weak_label_group = 0 if self.epoch < 10 else self.epoch-10
+
+        n_of_weak_labels = int(dist/100*len(self.coco_labels)) if self.epoch < 11 else 10**5
+        n_of_coco_labels = len(self.coco_labels) if self.epoch < 11 else 0
+
+        weak_labels = self.weak_labels_groups[current_weak_label_group][:n_of_weak_labels]
+        coco_labels = [] if n_of_coco_labels == 0 else self.coco_labels
 
         num_coco_samples = int(
-            (len(self.coco_labels) / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
+            (n_of_coco_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
         num_weak_samples = int(
             (n_of_weak_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
 
@@ -76,11 +85,7 @@ class Test(unittest.TestCase):
             import pdb
             pdb.set_trace()
 
-        current_weak_label_group = 0 if self.epoch < 10 else self.epoch-10
-
-        weak_labels = self.weak_labels_groups[current_weak_label_group][:n_of_weak_labels]
-
-        assert len(self.coco_labels) + \
+        assert len(coco_labels) + \
             len(weak_labels) == int(self.total_size/self.samples_per_gpu) * \
             self.samples_per_gpu
 
@@ -90,14 +95,14 @@ class Test(unittest.TestCase):
         indices = []
         while len(indices) != int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu:
             batch = [
-                *list(self.coco_labels[coco_count:coco_count+coco_samples_per_batch]),
+                *list(coco_labels[coco_count:coco_count+coco_samples_per_batch]),
                 *list(weak_labels[weak_count:weak_count+weak_samples_per_batch])
             ]
 
             try:
                 assert len(batch) == self.samples_per_gpu
             except AssertionError:
-                indices.extend(self.coco_labels[coco_count:])
+                indices.extend(coco_labels[coco_count:])
                 indices.extend(weak_labels[weak_count:])
                 break
 
