@@ -11,7 +11,7 @@ class Test(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(Test, self).__init__(*args, **kwargs)
-        self.epoch = 0
+        self.epoch = 2
         self.flag = [0]*117000
         self.flag = self.flag + [1]*10**6
         self.flag = np.array(self.flag)
@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
             dist = self.epochs[0]
         else:
             try:
-                dist = self.epochs[self.epoch-1]
+                dist = self.epochs[self.epoch]
             except IndexError:
                 dist = 100
 
@@ -53,7 +53,8 @@ class Test(unittest.TestCase):
 
         n_of_weak_labels = int(dist/100*len(self.coco_labels)) if self.epoch < 11 else len(self.weak_labels_groups[current_weak_label_group])
         n_of_coco_labels = len(self.coco_labels) if self.epoch < 11 else 0
-
+        print(n_of_weak_labels)
+        print(n_of_coco_labels)
 
         weak_labels = self.weak_labels_groups[current_weak_label_group][:n_of_weak_labels]
         coco_labels = [] if n_of_coco_labels == 0 else self.coco_labels
@@ -107,7 +108,6 @@ class Test(unittest.TestCase):
             coco_count += coco_samples_per_batch
             weak_count += weak_samples_per_batch
 
-        assert len(indices) == int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu
 
         # Subsamples
         if not self.num_replicas == 1:
