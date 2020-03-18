@@ -197,11 +197,9 @@ class CustomSampler(Sampler):
         g = torch.Generator()
         g.manual_seed(self.epoch)
 
-        # Random shuffle coco labels (for each epoch)
         self.coco_labels = self.coco_labels[torch.randperm(
             len(self.coco_labels), generator=g)]
 
-        # Distribute number of weak labels
         if self.epoch == 0:
             dist = self.epochs[0]
         else:
@@ -210,11 +208,10 @@ class CustomSampler(Sampler):
             except IndexError:
                 dist = 100
 
-        # We divide weak labels in groups to not repeat samples in different epochs
-        current_weak_label_group = 0 if self.epoch < 10 else self.epoch-10
+        current_weak_label_group = 0 if self.epoch < 11 else self.epoch-10
 
-        n_of_weak_labels = int(dist/100*len(self.coco_labels)
-                               ) if self.epoch < 11 else 10**5
+        n_of_weak_labels = int(dist/100*len(self.coco_labels)) if self.epoch < 11 else len(
+            self.weak_labels_groups[current_weak_label_group])
         n_of_coco_labels = len(self.coco_labels) if self.epoch < 11 else 0
 
         weak_labels = self.weak_labels_groups[current_weak_label_group][:n_of_weak_labels]
@@ -248,13 +245,9 @@ class CustomSampler(Sampler):
             import pdb
             pdb.set_trace()
 
-        assert len(coco_labels) + \
-            len(weak_labels) == int(self.total_size/self.samples_per_gpu) * \
-            self.samples_per_gpu
-
         coco_count = 0
         weak_count = 0
-        count = 0
+
         indices = []
         while len(indices) != int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu:
             batch = [
@@ -272,7 +265,6 @@ class CustomSampler(Sampler):
 
             indices.extend(batch)
 
-            count += 1
             coco_count += coco_samples_per_batch
             weak_count += weak_samples_per_batch
 
