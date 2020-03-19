@@ -11,13 +11,13 @@ class Test(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(Test, self).__init__(*args, **kwargs)
-        self.epoch = 2
-        self.flag = [0]*117000
+        self.epoch = 11
+        self.flag = [0]*1165067
         self.flag = self.flag + [1]*10**6
         self.flag = np.array(self.flag)
-        self.samples_per_gpu = 16
+        self.samples_per_gpu = 32
         self.rank = 1
-        self.num_replicas = 1
+        self.num_replicas = 4
 
         self.coco_labels = np.where(self.flag == 0)[0]
         self.weak_labels = np.where(self.flag == 1)[0]
@@ -60,62 +60,61 @@ class Test(unittest.TestCase):
         coco_labels = [] if n_of_coco_labels == 0 else self.coco_labels
 
         num_coco_samples = int(
-            int(n_of_coco_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
+            n_of_coco_labels / self.samples_per_gpu / self.num_replicas * self.samples_per_gpu)
         num_weak_samples = int(
-            int(n_of_weak_labels / self.samples_per_gpu / self.num_replicas) * self.samples_per_gpu)
+            n_of_weak_labels / self.samples_per_gpu / self.num_replicas * self.samples_per_gpu)
 
         self.num_samples = num_coco_samples + num_weak_samples
 
         self.total_size = self.num_samples*self.num_replicas
 
-        coco_samples_per_batch = int(
-            num_coco_samples/int(self.num_samples/self.samples_per_gpu))
-        try:
-            weak_samples_per_batch = int(num_weak_samples/int(
-                self.num_samples/self.samples_per_gpu))
-        except ZeroDivisionError:
-            weak_samples_per_batch = 0
-        extra = self.samples_per_gpu - \
-            (coco_samples_per_batch+weak_samples_per_batch)
+        if len(weak_labels) != 0 and len(coco_labels) != 0:
+            coco_samples_per_batch = int(
+                num_coco_samples/int(self.num_samples/self.samples_per_gpu))
+            try:
+                weak_samples_per_batch = int(num_weak_samples/int(
+                    self.num_samples/self.samples_per_gpu))
+            except ZeroDivisionError:
+                weak_samples_per_batch = 0
+            extra = self.samples_per_gpu - \
+                (coco_samples_per_batch+weak_samples_per_batch)
+            
+            coco_samples_per_batch+=extra
+
+            try:
+                assert coco_samples_per_batch + \
+                    weak_samples_per_batch == self.samples_per_gpu
+            except AssertionError:
+                import pdb
+                pdb.set_trace()
+
+
+            coco_count = 0
+            weak_count = 0
+
+            indices = []
+            while len(indices) != int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu:
+                batch = [
+                    *list(coco_labels[coco_count:coco_count+coco_samples_per_batch]),
+                    *list(weak_labels[weak_count:weak_count+weak_samples_per_batch])
+                ]
+
+                if len(batch) != self.samples_per_gpu:
+                    indices.extend(coco_labels[coco_count:])
+                    indices.extend(weak_labels[weak_count:])
+                    break
+
+                indices.extend(batch)
+
+                coco_count += coco_samples_per_batch
+                weak_count += weak_samples_per_batch
+        else:
+            indices = weak_labels if len(coco_labels) == 0 else coco_labels
         
-        coco_samples_per_batch+=extra
-
-        try:
-            assert coco_samples_per_batch + \
-                weak_samples_per_batch == self.samples_per_gpu
-        except AssertionError:
-            import pdb
-            pdb.set_trace()
-
-
-        coco_count = 0
-        weak_count = 0
-
-        indices = []
-        while len(indices) != int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu:
-            batch = [
-                *list(coco_labels[coco_count:coco_count+coco_samples_per_batch]),
-                *list(weak_labels[weak_count:weak_count+weak_samples_per_batch])
-            ]
-
-            if len(batch) != self.samples_per_gpu:
-                indices.extend(coco_labels[coco_count:])
-                indices.extend(weak_labels[weak_count:])
-                break
-
-            indices.extend(batch)
-
-            coco_count += coco_samples_per_batch
-            weak_count += weak_samples_per_batch
-
-
         # Subsamples
         if not self.num_replicas == 1:
             offset = self.num_samples * self.rank
             indices = indices[offset:offset + self.num_samples]
-
-        assert len(indices) == self.num_samples
-
 
         return iter(indices)
 
