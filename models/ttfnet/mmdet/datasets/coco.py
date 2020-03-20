@@ -25,12 +25,14 @@ class CocoDataset(CustomDataset):
 
     def load_annotations(self, ann_file):
         self.coco = COCO(ann_file)
+
         self.cat_ids = self.coco.getCatIds()
+        self.img_ids = self.coco.getImgIds()
+        
         self.cat2label = {
             cat_id: i + 1
             for i, cat_id in enumerate(self.cat_ids)
         }
-        self.img_ids = self.coco.getImgIds()
         img_infos = []
         for i in self.img_ids:
             info = self.coco.loadImgs([i])[0]
@@ -93,10 +95,10 @@ class CocoDataset(CustomDataset):
 
         if gt_bboxes:
             gt_bboxes = np.array(gt_bboxes, dtype=np.float32)
-            gt_labels = np.array(gt_labels, dtype=np.int64)
+            gt_labels = np.array(gt_labels, dtype=np.int16)
         else:
             gt_bboxes = np.zeros((0, 4), dtype=np.float32)
-            gt_labels = np.array([], dtype=np.int64)
+            gt_labels = np.array([], dtype=np.int16)
 
         if gt_bboxes_ignore:
             gt_bboxes_ignore = np.array(gt_bboxes_ignore, dtype=np.float32)
