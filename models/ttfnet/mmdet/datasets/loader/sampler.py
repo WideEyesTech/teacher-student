@@ -212,7 +212,7 @@ class CustomSampler(Sampler):
 
         n_of_weak_labels = int(dist/100*len(self.coco_labels)) if self.epoch < 11 else len(
             self.weak_labels_groups[current_weak_label_group])
-        n_of_coco_labels = len(self.coco_labels) if self.epoch < 11 else 0
+        n_of_coco_labels = len(self.coco_labels)
         print(n_of_weak_labels)
         print(n_of_coco_labels)
 
@@ -228,7 +228,7 @@ class CustomSampler(Sampler):
 
         self.total_size = self.num_samples*self.num_replicas
 
-        if len(weak_labels) != 0 and len(coco_labels) != 0:
+        if len(weak_labels) != 0:
             coco_samples_per_batch = int(
                 num_coco_samples/int(self.num_samples/self.samples_per_gpu))
             try:
@@ -269,7 +269,7 @@ class CustomSampler(Sampler):
                 coco_count += coco_samples_per_batch
                 weak_count += weak_samples_per_batch
         else:
-            indices = weak_labels if len(coco_labels) == 0 else coco_labels
+            indices = coco_labels
 
         # Subsamples
         if not self.num_replicas == 1:
