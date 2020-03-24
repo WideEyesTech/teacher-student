@@ -1,7 +1,6 @@
 from .builder import build_dataset
 from .cityscapes import CityscapesDataset
 from .coco import CocoDataset
-from .low_ram import LowRamDataset
 from .custom import CustomDataset
 from .dataset_wrappers import ConcatDataset, RepeatDataset
 from .loader import DistributedGroupSampler, GroupSampler, build_dataloader
@@ -14,5 +13,5 @@ __all__ = [
     'CustomDataset', 'XMLDataset', 'CocoDataset', 'VOCDataset',
     'CityscapesDataset', 'GroupSampler', 'DistributedGroupSampler',
     'build_dataloader', 'ConcatDataset', 'RepeatDataset', 'WIDERFaceDataset',
-    'DATASETS', 'build_dataset', 'LowRamDataset'
+    'DATASETS', 'build_dataset'
 ]
