@@ -37,7 +37,7 @@ test_cfg = dict(
     max_per_img=100)
 # dataset settings
 dataset_type = 'CocoDataset'
-data_root = '/home/toni/datasets/COCO_exp1/'
+data_root = '/wideeyes/datasets/COCO_exp2/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
@@ -66,8 +66,8 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    imgs_per_gpu=16,
-    workers_per_gpu=2,
+    imgs_per_gpu=32,
+    workers_per_gpu=8,
     train=dict(
         type=dataset_type,
         ann_file=data_root + 'annotations/instances_train2017.json',
@@ -94,19 +94,19 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=1.0 / 5,
     step=[9, 11])
-checkpoint_config = dict(interval=4)
+checkpoint_config = dict(interval=1)
 log_config = dict(
-    interval=20,
+    interval=1,
     hooks=[
         dict(type='TextLoggerHook'),
     ])
 # yapf:enable
 # runtime settings
-total_epochs = 12
-device_ids = range(8)
+total_epochs = 19
+device_ids = range(4)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = './work_dirs/ttfnet18_1x'
 load_from = None
-resume_from = None
+resume_from = '/wideeyes/datasets/experiments/g1/ttfnet18_1x/latest.pth'
 workflow = [('train', 1)]

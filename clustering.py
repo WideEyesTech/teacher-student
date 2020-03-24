@@ -354,7 +354,6 @@ def cluster():
 
             # Filter inferences by score
             if teacher == "GCNET":
-                import pdb; pdb.set_trace()
                 inferences = np.array(list(filter(lambda x: x["score"] > 0.6, inferences)))
                 if len(inferences) == 0:
                     continue
@@ -391,6 +390,8 @@ def cluster():
             save_as_type = "val"
         else:
             save_as_type = "test"
+
+        import pdb; pdb.set_trace()
 
         save_result(pjoin(
             data_dir, filenames_paths[count]), "{}/instances_{}2017".format(results_path, save_as_type), cluster_result, file)
