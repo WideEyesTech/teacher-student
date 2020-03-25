@@ -37,7 +37,7 @@ test_cfg = dict(
     max_per_img=100)
 # dataset settings
 dataset_type = 'CocoDataset'
-data_root = '/wideeyes/datasets/COCO_exp2/'
+data_root = '/home/toni/datasets/500k/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
