@@ -183,8 +183,7 @@ class CustomSampler(Sampler):
 
         self.weak_labels_group_size = int(len(self.weak_labels)/10**5)
         self.group_iter = 0
-        print("Weak labels groups size: ", self.weak_labels_group_size)
-        print("Group iter: ", self.group_iter)
+        
 
         self.epochs = list(range(0, 110, 10))
 
@@ -204,8 +203,7 @@ class CustomSampler(Sampler):
                 dist = self.epochs[self.epoch]
             except IndexError:
                 dist = 100
-        n_of_weak_labels = int(dist/100*len(self.coco_labels)
-                               ) if self.epoch < 10 else 10**5
+        n_of_weak_labels = int(dist/100*len(self.coco_labels)) if self.epoch < 10 else 10**5
         n_of_coco_labels = len(self.coco_labels)
 
         print("N of weak labels: ", n_of_weak_labels)
@@ -284,3 +282,6 @@ class CustomSampler(Sampler):
             self.group_iter+=1
         else:
             self.group_iter=0
+        
+        print("Weak labels groups size: ", self.weak_labels_group_size)
+        print("Group iter: ", self.group_iter)
