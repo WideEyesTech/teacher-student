@@ -278,10 +278,11 @@ class CustomSampler(Sampler):
 
     def set_epoch(self, epoch):
         self.epoch = epoch
-        if self.group_iter < self.weak_labels_group_size:
-            self.group_iter+=1
-        else:
-            self.group_iter=0
-        
+        if self.epoch >= 10:
+            if self.epoch == 10 or self.group_iter >= self.weak_labels_group_size:
+                self.group_iter=0
+            else:
+                self.group_iter+=1
+            
         print("Weak labels groups size: ", self.weak_labels_group_size)
         print("Group iter: ", self.group_iter)
