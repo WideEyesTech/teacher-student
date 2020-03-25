@@ -106,7 +106,7 @@ total_epochs = 60
 device_ids = range(4)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/ttfnet18_1x'
+work_dir = '/home/toni/datasets/500K/results/'
 load_from = None
-resume_from = '/wideeyes/datasets/experiments/g1/ttfnet18_1x/latest.pth'
+resume_from = None # /home/toni/datasets/500K/results/latest.pth
 workflow = [('train', 1)]
