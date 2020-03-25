@@ -11,11 +11,11 @@ class Test(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(Test, self).__init__(*args, **kwargs)
-        self.epoch = 33
+        self.epoch = 2
         self.flag = [0]*116506
         self.flag = self.flag + [1]*10**6
         self.flag = np.array(self.flag)
-        self.samples_per_gpu = 32
+        self.samples_per_gpu = 64
         self.rank = 1
         self.num_replicas = 1
 
@@ -53,10 +53,10 @@ class Test(unittest.TestCase):
         print("N of weak labels: ", n_of_weak_labels)
         print("N of COCO labels: ", n_of_coco_labels)
 
-        if self.epoch > 10:
-            weak_labels = self.weak_labels[self.group_iter*10**5:self.group_iter*10**5+self.group_iter*10**5]
+        if self.group_iter != 0:
+            weak_labels = self.weak_labels[self.group_iter*(n_of_weak_labels):self.group_iter*(n_of_weak_labels)+self.group_iter*(n_of_weak_labels)]
         else:
-            weak_labels = self.weak_labels
+            weak_labels = self.weak_labels[:n_of_weak_labels]
 
         num_coco_samples = int(
             n_of_coco_labels / self.samples_per_gpu / self.num_replicas * self.samples_per_gpu)
@@ -109,6 +109,7 @@ class Test(unittest.TestCase):
         else:
             indices = self.coco_labels
 
+        print(len(indices))
         print("Num replicas: ", self.num_replicas)
         # Subsamples
         if not self.num_replicas == 1:
