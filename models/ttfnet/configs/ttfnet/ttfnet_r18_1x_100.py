@@ -66,8 +66,8 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    imgs_per_gpu=32,
-    workers_per_gpu=8,
+    imgs_per_gpu=64,
+    workers_per_gpu=1,
     train=dict(
         type=dataset_type,
         ann_file=data_root + 'annotations/instances_train2017.json',
@@ -102,7 +102,7 @@ log_config = dict(
     ])
 # yapf:enable
 # runtime settings
-total_epochs = 19
+total_epochs = 22
 device_ids = range(4)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'

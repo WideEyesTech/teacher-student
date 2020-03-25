@@ -181,6 +181,11 @@ class CustomSampler(Sampler):
         self.coco_labels = np.where(self.flag == 0)[0]
         self.weak_labels = np.where(self.flag == 1)[0]
 
+        self.weak_labels_group_size = int(len(self.weak_labels)/10**5)
+        self.group_iter = 0
+        print("Weak labels groups size: ", self.weak_labels_group_size)
+        print("Group iter: ", self.group_iter)
+
         self.epochs = list(range(0, 110, 10))
 
     def __iter__(self):
@@ -200,11 +205,16 @@ class CustomSampler(Sampler):
             except IndexError:
                 dist = 100
         n_of_weak_labels = int(dist/100*len(self.coco_labels)
-                               ) if self.epoch < 10 else len(self.weak_labels)
+                               ) if self.epoch < 10 else 10**5
         n_of_coco_labels = len(self.coco_labels)
 
         print("N of weak labels: ", n_of_weak_labels)
         print("N of COCO labels: ", n_of_coco_labels)
+
+        if self.epoch > 10:
+            weak_labels = self.weak_labels[self.group_iter*10**5:self.group_iter*10**5+self.group_iter*10**5]
+        else:
+            weak_labels = self.weak_labels
 
         num_coco_samples = int(
             n_of_coco_labels / self.samples_per_gpu / self.num_replicas * self.samples_per_gpu)
@@ -215,7 +225,7 @@ class CustomSampler(Sampler):
 
         self.total_size = self.num_samples*self.num_replicas
 
-        if len(self.weak_labels) != 0:
+        if len(weak_labels) != 0:
             coco_samples_per_batch = int(
                 num_coco_samples/int(self.num_samples/self.samples_per_gpu))
             try:
@@ -242,12 +252,12 @@ class CustomSampler(Sampler):
                 batch = [
                     *list(self.coco_labels[coco_count:coco_count +
                                       coco_samples_per_batch]),
-                    *list(self.weak_labels[weak_count:weak_count+weak_samples_per_batch])
+                    *list(weak_labels[weak_count:weak_count+weak_samples_per_batch])
                 ]
 
                 if len(batch) != self.samples_per_gpu:
                     indices.extend(self.coco_labels[coco_count:])
-                    indices.extend(self.weak_labels[weak_count:])
+                    indices.extend(weak_labels[weak_count:])
                     break
 
                 indices.extend(batch)
@@ -270,3 +280,7 @@ class CustomSampler(Sampler):
 
     def set_epoch(self, epoch):
         self.epoch = epoch
+        if self.group_iter < self.weak_labels_group_size:
+            self.group_iter+=1
+        else:
+            self.group_iter=0
