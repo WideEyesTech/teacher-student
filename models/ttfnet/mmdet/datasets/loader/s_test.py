@@ -11,11 +11,11 @@ class Test(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(Test, self).__init__(*args, **kwargs)
-        self.epoch = 2
-        self.flag = [0]*116506
+        self.epoch = 1
+        self.flag = [0]*120506
         self.flag = self.flag + [1]*10**6
         self.flag = np.array(self.flag)
-        self.samples_per_gpu = 64
+        self.samples_per_gpu = 32
         self.rank = 1
         self.num_replicas = 1
 
@@ -98,6 +98,7 @@ class Test(unittest.TestCase):
                 ]
 
                 if len(batch) != self.samples_per_gpu:
+                    print("Batch", len(batch), len(indices))
                     indices.extend(self.coco_labels[coco_count:])
                     indices.extend(weak_labels[weak_count:])
                     break
@@ -109,13 +110,14 @@ class Test(unittest.TestCase):
         else:
             indices = self.coco_labels
 
-        print(len(indices))
         print("Num replicas: ", self.num_replicas)
         # Subsamples
         if not self.num_replicas == 1:
             offset = self.num_samples * self.rank
             indices = indices[offset:offset + self.num_samples]
 
+        print(len(indices), self.num_samples)
+        import pdb; pdb.set_trace()
         return iter(indices)
 
 

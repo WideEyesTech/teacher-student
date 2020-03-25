@@ -183,12 +183,10 @@ class CustomSampler(Sampler):
 
         self.weak_labels_group_size = int(len(self.weak_labels)/10**5)
         self.group_iter = 0
-        
 
         self.epochs = list(range(0, 110, 10))
 
     def __iter__(self):
-
         # deterministically shuffle based on epoch
         g = torch.Generator()
         g.manual_seed(self.epoch)
@@ -203,16 +201,18 @@ class CustomSampler(Sampler):
                 dist = self.epochs[self.epoch]
             except IndexError:
                 dist = 100
-        n_of_weak_labels = int(dist/100*len(self.coco_labels)) if self.epoch < 10 else 10**5
+        n_of_weak_labels = int(dist/100*len(self.coco_labels)
+                               ) if self.epoch < 10 else 10**5
         n_of_coco_labels = len(self.coco_labels)
 
         print("N of weak labels: ", n_of_weak_labels)
         print("N of COCO labels: ", n_of_coco_labels)
 
-        if self.epoch > 10:
-            weak_labels = self.weak_labels[self.group_iter*10**5:self.group_iter*10**5+self.group_iter*10**5]
+        if self.group_iter != 0:
+            weak_labels = self.weak_labels[self.group_iter*(n_of_weak_labels):self.group_iter*(
+                n_of_weak_labels)+self.group_iter*(n_of_weak_labels)]
         else:
-            weak_labels = self.weak_labels
+            weak_labels = self.weak_labels[:n_of_weak_labels]
 
         num_coco_samples = int(
             n_of_coco_labels / self.samples_per_gpu / self.num_replicas * self.samples_per_gpu)
@@ -249,7 +249,7 @@ class CustomSampler(Sampler):
             while len(indices) != int(self.total_size/self.samples_per_gpu)*self.samples_per_gpu:
                 batch = [
                     *list(self.coco_labels[coco_count:coco_count +
-                                      coco_samples_per_batch]),
+                                           coco_samples_per_batch]),
                     *list(weak_labels[weak_count:weak_count+weak_samples_per_batch])
                 ]
 
@@ -271,6 +271,7 @@ class CustomSampler(Sampler):
             offset = self.num_samples * self.rank
             indices = indices[offset:offset + self.num_samples]
 
+        print(len(indices), self.num_samples)
         return iter(indices)
 
     def __len__(self):
@@ -280,9 +281,9 @@ class CustomSampler(Sampler):
         self.epoch = epoch
         if self.epoch >= 10:
             if self.epoch == 10 or self.group_iter >= self.weak_labels_group_size:
-                self.group_iter=0
+                self.group_iter = 0
             else:
-                self.group_iter+=1
-            
+                self.group_iter += 1
+
         print("Weak labels groups size: ", self.weak_labels_group_size)
         print("Group iter: ", self.group_iter)
