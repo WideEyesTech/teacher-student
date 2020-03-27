@@ -98,9 +98,9 @@ class Test(unittest.TestCase):
                 ]
 
                 if len(batch) != self.samples_per_gpu:
-                    print("Batch", len(batch), len(indices))
-                    indices.extend(self.coco_labels[coco_count:])
-                    indices.extend(weak_labels[weak_count:])
+                    # print("Batch", len(batch), len(indices))
+                    # indices.extend(self.coco_labels[coco_count:])
+                    # indices.extend(weak_labels[weak_count:])
                     break
 
                 indices.extend(batch)
