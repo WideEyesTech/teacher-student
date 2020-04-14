@@ -8,12 +8,12 @@ class Config:
         self._configs["sampling_function"] = "kp_detection"
 
         # Directories
-        self._configs["data_dir"] = "/home/toni/datasets/openimages"
-        self._configs["filenames_dir"] = "/tmp/sorted_4_oi_names.txt"
-        self._configs["cache_dir"] = "/home/toni/Desktop/teacher-student/teachers/CenterNet/cache"
+        self._configs["data_dir"] = "/Users/tonibardina/remote/Desktop/VIU/images"
+        self._configs["filenames_dir"] = "/Users/tonibardina/remote/Desktop/VIU/filenames.txt"
+        self._configs["cache_dir"] = "./cache"
         self._configs["snapshot_name"] = "CenterNet-104_480000"
-        self._configs["result_dir"] = "/opt/results"
-        self._configs["model_config"] = "/home/toni/Desktop/teacher-student/teachers/CenterNet/config/CenterNet104_teacher_student.json"
+        self._configs["result_dir"] = "/Users/tonibardina/remote/Desktop/VIU/results"
+        self._configs["model_config"] = "./config/CenterNet104_teacher_student.json"
 
 
         # Rng
