@@ -37,7 +37,7 @@ test_cfg = dict(
     max_per_img=100)
 # dataset settings
 dataset_type = 'CocoDataset'
-data_root = '/home/toni/datasets/100K/'
+data_root = '/home/toni/datasets/experiments/100K/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
@@ -66,7 +66,7 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    imgs_per_gpu=64,
+    imgs_per_gpu=32,
     workers_per_gpu=1,
     train=dict(
         type=dataset_type,
@@ -102,11 +102,11 @@ log_config = dict(
     ])
 # yapf:enable
 # runtime settings
-total_epochs = 20
+total_epochs = 22
 device_ids = range(4)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = '/home/toni/datasets/100K/results/'
+work_dir = '/home/toni/datasets/experiments/100K/results/'
 load_from = None
-resume_from = None # /home/toni/datasets/100K/results/latest.pth
+resume_from = '/home/toni/datasets/ttfnet18_1x-fe6884.pth' # /home/toni/datasets/100K/results/latest.pth
 workflow = [('train', 1)]

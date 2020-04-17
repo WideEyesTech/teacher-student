@@ -108,5 +108,5 @@ dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = '/home/toni/datasets/1M/results/'
 load_from = None
-resume_from = None # /home/toni/datasets/1M/results/latest.pth
+resume_from = '/home/toni/datasets/1M/results/latest.pth'
 workflow = [('train', 1)]

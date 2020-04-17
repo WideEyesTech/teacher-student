@@ -39,7 +39,7 @@ def build_dataloader(dataset,
     data_loader = DataLoader(
         dataset,
         batch_size=batch_size,
-        #drop_last=True,
+        drop_last=True,
         sampler=sampler,
         num_workers=num_workers,
         collate_fn=partial(collate, samples_per_gpu=imgs_per_gpu),

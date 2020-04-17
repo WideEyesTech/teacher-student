@@ -116,10 +116,10 @@ def print_results(results, model, image):
         label = list(classes.keys())[list(classes.values()).index(
             int(np.array(result[4:-1]).argmax()))]
 
-        # print("Teacher: ", model)
-        # print("Score: ", score)
-        # print("Category: ", label)
-        # print("Number of teacher inferences: ", result[-1])
+        print("Teacher: ", model)
+        print("Score: ", score)
+        print("Category: ", label)
+        print("Number of teacher inferences: ", result[-1])
 
         xmin = bbox[0]
         ymin = bbox[1]
@@ -142,7 +142,7 @@ def print_results(results, model, image):
                                    fill=False, edgecolor=score_color, linewidth=4.0))
         ax.text(xmin+1, ymin-3, '{:s}'.format("{}_{}".format(label, score)), bbox=dict(
             facecolor=score_color, ec='black', lw=2, alpha=0.5), fontsize=15, color='white', weight='bold')
-
+    import pdb; pdb.set_trace()
     plt.show()
     plt.close()
 
@@ -268,7 +268,7 @@ def save_result(input_path, output_path, annotations, file):
 def cluster():
 
     # Enable debugging features
-    debug = False
+    debug = True
 
     # Make sure the experiment does not repeat
     random.seed(int(time.time()))
@@ -292,10 +292,12 @@ def cluster():
 
     # Clustering results
     cluster_result = []
-
+     
+    counter = 0
     # Create csv columnssudo apt install nfs-common
     for count in tqdm.tqdm(range(0, len(inferences_jsons)), ncols=80, desc="Clustering..."):
-
+        if counter ==  100000:
+            break
         file = inferences_jsons[count]
 
         # Check if all teachers have inferences
@@ -327,9 +329,12 @@ def cluster():
         # ignored if not all json
         # files load correct
         jsonLoadFailed = False
-
+ 
         # Start clustering
         for index, teacher in enumerate(teachers):
+
+            if teacher != "GCNET":
+                continue
 
             # Get results path for each teacher
             teacher_inferences = pjoin(inferences_path, teacher)
@@ -366,11 +371,12 @@ def cluster():
                 print_results(inferences, teacher, image)
 
             # Do not cluster until there are at least two teachers
-            if index == 0:
-                cluster_result = inferences
-                continue
+            #if index == 0:
+            #    cluster_result = inferences
+            #    continue
+            cluster_result = inferences
 
-            cluster_result = combine(cluster_result, inferences)
+            #cluster_result = combine(cluster_result, inferences)
 
         # If some json have failed to load skip clustering
         if jsonLoadFailed:
@@ -384,17 +390,12 @@ def cluster():
         save_as_type = "train"
         r = random.random()
 
-        if r < .7:
-            save_as_type = "train"
-        elif .7 < r < .9:
-            save_as_type = "val"
-        else:
-            save_as_type = "test"
+        save_as_type = "train"
 
-        import pdb; pdb.set_trace()
-
-        save_result(pjoin(
-            data_dir, filenames_paths[count]), "{}/instances_{}2017".format(results_path, save_as_type), cluster_result, file)
+        counter+=1
+        
+        #save_result(pjoin(
+        #    data_dir, filenames_paths[count]), "{}/instances_{}2017".format(results_path, save_as_type), cluster_result, file)
 
         yield count
 
