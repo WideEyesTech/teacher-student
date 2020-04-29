@@ -54,7 +54,7 @@ test_cfg = dict(
         min_bbox_size=0))
 # dataset settings
 dataset_type = 'CocoDataset'
-data_root = 'data/coco/'
+data_root = '/home/toni/datasets/experiments2/100k/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
@@ -124,6 +124,6 @@ total_epochs = 12
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = './work_dirs/rpn_r50_fpn_1x'
-load_from = None
+load_from = '/home/toni/datasets/rpn_r50_c4_1x-eb38972b.pth'
 resume_from = None
 workflow = [('train', 1)]

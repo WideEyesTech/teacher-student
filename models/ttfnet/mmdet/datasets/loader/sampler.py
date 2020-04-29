@@ -192,7 +192,7 @@ class CustomSampler(Sampler):
         self.coco_labels = self.coco_labels[torch.randperm(
             len(self.coco_labels), generator=g)]
 
-        n_of_weak_labels = int((self.epoch-11)/100*len(self.coco_labels)) if self.epoch < 21 else 10**5
+        n_of_weak_labels = int(self.epoch/100*len(self.coco_labels)) if self.epoch < 11 else 10**5
         n_of_coco_labels = len(self.coco_labels)
         print('EPOCH: ', self.epoch)
         print("N of weak labels: ", n_of_weak_labels)
